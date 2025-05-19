@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package com.penumbraos.ipc.proxy;
+
+// For identifying requests across the TCP boundary
+message RequestOrigin {
+  int32 id = 1; // This will be 'requestId' for HTTP, 'clientWsId' for WebSockets
+}
+
+message HttpHeader {
+  string key = 1;
+  string value = 2;
+}
+
+// --- From FriendlyAPIService (Kotlin) to NetworkProxyProcess (Rust) ---
+message ClientToServerMessage {
+  RequestOrigin origin = 1;
+  oneof payload {
+    HttpProxyRequest http_request = 2;
+    // WebSocket messages will be added later
+  }
+}
+
+message HttpProxyRequest {
+  string url = 1;
+  string method = 2; // "GET", "POST", etc.
+  repeated HttpHeader headers = 3;
+  bytes body = 4;
+}
+
+// --- From NetworkProxyProcess (Rust) to FriendlyAPIService (Kotlin) ---
+message ServerToClientMessage {
+  RequestOrigin origin = 1;
+  oneof payload {
+    HttpResponseHeaders http_headers = 2;
+    HttpResponseBodyChunk http_body_chunk = 3;
+    HttpResponseComplete http_response_complete = 4;
+    HttpRequestError http_error = 5;
+    // WebSocket messages will be added later
+  }
+}
+
+message HttpResponseHeaders {
+  int32 status_code = 1;
+  repeated HttpHeader headers = 2;
+}
+
+message HttpResponseBodyChunk {
+  bytes chunk = 1;
+}
+
+message HttpResponseComplete {}
+
+message HttpRequestError {
+  string error_message = 1;
+  int32 error_code = 2;
+}

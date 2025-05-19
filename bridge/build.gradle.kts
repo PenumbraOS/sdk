@@ -1,0 +1,82 @@
+import com.google.protobuf.gradle.proto
+
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.protobuf)
+}
+
+android {
+    namespace = "com.penumbraos.bridge"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.penumbraos.bridge"
+        minSdk = 32
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    sourceSets {
+        named("main") {
+            proto {
+                srcDirs("${project.rootDir}/bridge_priv_rs/proto")
+            }
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        aidl = true
+    }
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${libs.versions.protobufJava.get()}"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+                create("java") {
+                    option("lite")
+                }
+            }
+        }
+    }
+}
+
+//androidComponents.beforeVariants {
+//    android.sourceSets.register(it.name) {
+//        val buildDir = layout.buildDirectory.get().asFile
+//        java.srcDir(buildDir.resolve("generated/source/proto/${it.name}/java"))
+//        kotlin.srcDir(buildDir.resolve("generated/source/proto/${it.name}/kotlin"))
+//    }
+//}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.protobuf.javalite)
+    implementation(libs.protobuf.kotlin.lite)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+}
