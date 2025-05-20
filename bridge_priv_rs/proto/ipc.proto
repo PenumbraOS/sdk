@@ -4,7 +4,7 @@ package com.penumbraos.ipc.proxy;
 
 // For identifying requests across the TCP boundary
 message RequestOrigin {
-  int32 id = 1; // This will be 'requestId' for HTTP, 'clientWsId' for WebSockets
+  string id = 1; // This will be 'requestId' for HTTP, 'clientWsId' for WebSockets
 }
 
 message HttpHeader {

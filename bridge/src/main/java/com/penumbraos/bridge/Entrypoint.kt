@@ -14,7 +14,7 @@ class Entrypoint {
             Log.w("SDKBridge", "Starting bridge")
 
             try {
-                val service = NetworkService()
+                val service = BridgeService()
                 val serviceManager = Class.forName("android.os.ServiceManager")
                 val iBinderClass = Class.forName("android.os.IBinder")
                 val addService = serviceManager.getMethod("addService", String::class.java, iBinderClass)
