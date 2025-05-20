@@ -12,6 +12,8 @@ pub enum Error {
     HttpError(#[from] http::method::InvalidMethod),
     #[error("Protocol decode error {0}")]
     ProtocolDecodeError(#[from] prost::DecodeError),
+    #[error("Protocol handle error {0}")]
+    ProtocolHandleError(String),
 
     #[error("Unknown error {0}")]
     Unknown(String),
