@@ -46,6 +46,11 @@ android {
     buildFeatures {
         aidl = true
     }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 protobuf {
@@ -64,8 +69,6 @@ protobuf {
 }
 
 tasks.withType<Test> {
-    useJUnitPlatform()
-
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = true
@@ -86,7 +89,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.core.testing)
+    testImplementation(libs.robolectric)
     
-    androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

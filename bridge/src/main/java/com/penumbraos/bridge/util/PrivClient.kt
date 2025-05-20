@@ -14,11 +14,13 @@ import kotlinx.coroutines.withContext
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.IOException
+import java.net.InetSocketAddress
 import java.net.Socket
+import java.net.SocketAddress
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-internal class PrivClient(val scope: CoroutineScope) {
+internal class PrivClient(val scope: CoroutineScope, val delegate: ICallbackDelegate) {
     private var socket: Socket? = null
     private var output: DataOutputStream? = null
     private var input: DataInputStream? = null
@@ -29,12 +31,13 @@ internal class PrivClient(val scope: CoroutineScope) {
 
     suspend fun connect(host: String, port: Int) {
         withContext(Dispatchers.IO) {
-            socket = Socket(host, port).also {
+            socket = Socket().also {
                 output = DataOutputStream(it.getOutputStream())
                 input = DataInputStream(it.getInputStream())
                 isConnected.set(true)
                 Log.d(TAG, "Connected to TCP server")
             }
+            socket?.connect(InetSocketAddress(host, port))
         }
     }
 
@@ -60,10 +63,7 @@ internal class PrivClient(val scope: CoroutineScope) {
         launch {
             for (message in messageChannel) {
                 try {
-                    val bytes = message.toByteArray()
-                    output?.writeInt(bytes.size)
-                    output?.write(bytes)
-                    output?.flush()
+                    writeMessage(message, output!!)
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to send message", e)
                     disconnect()
@@ -79,32 +79,17 @@ internal class PrivClient(val scope: CoroutineScope) {
                 input?.readFully(buffer)
 
                 val message = ServerToClientMessage.parseFrom(buffer)
-                when (message.payloadCase) {
-                    ServerToClientMessage.PayloadCase.HTTP_HEADERS -> {
-                        val cb = httpCallbacks[message.origin.id]
-                        cb?.onHeaders(
-                            message.origin.id,
-                            message.httpHeaders.statusCode,
-                            message.httpHeaders.headersList.associate { h -> h.key to h.value }
-                        )
+                try {
+                    delegate.callback(message)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Callback failed with message type ${message.payloadCase}, error:" , e)
+                    try {
+                        delegate.genericError(message.origin.id, "Callback failed with message type ${message.payloadCase}")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Sending generic error failed. Terminating:" , e)
+                        disconnect()
+                        break
                     }
-                    ServerToClientMessage.PayloadCase.HTTP_BODY_CHUNK -> {
-                        val cb = httpCallbacks[message.origin.id]
-                        cb?.onData(message.origin.id, message.httpBodyChunk.chunk.toByteArray())
-                    }
-                    ServerToClientMessage.PayloadCase.HTTP_RESPONSE_COMPLETE -> {
-                        val cb = httpCallbacks.remove(message.origin.id)
-                        cb?.onComplete(message.origin.id)
-                    }
-                    ServerToClientMessage.PayloadCase.HTTP_ERROR -> {
-                        val cb = httpCallbacks.remove(message.origin.id)
-                        cb?.onError(
-                            message.origin.id,
-                            message.httpError.errorMessage,
-                            message.httpError.errorCode
-                        )
-                    }
-                    else -> Log.w(TAG, "Unknown message type")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error reading message", e)
