@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use http::HttpState;
-use tokio::sync::Mutex;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    sync::Mutex,
+};
 
 use crate::{
     connection::SinkConnection,
@@ -22,11 +25,14 @@ impl AppState {
         }))
     }
 
-    pub async fn handle_command(
+    pub async fn handle_command<T>(
         &mut self,
         message: ClientToServerMessage,
-        connection: SinkConnection,
-    ) -> Result<()> {
+        connection: SinkConnection<T>,
+    ) -> Result<()>
+    where
+        T: AsyncRead + AsyncWrite + Send + 'static,
+    {
         let request_id = message
             .origin
             .ok_or_else(|| Error::ProtocolHandleError("No request ID provided".into()))?

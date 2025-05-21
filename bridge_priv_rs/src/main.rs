@@ -1,4 +1,4 @@
-use bridge_priv_rs::{connection::handle_connection, state::AppState};
+use bridge_priv_rs::{connection::SinkConnection, state::AppState};
 use std::io::{self};
 use tokio::net::TcpListener;
 
@@ -13,9 +13,7 @@ async fn main() -> io::Result<()> {
         let state = state.clone();
 
         tokio::spawn(async move {
-            if let Err(e) = handle_connection(stream, state).await {
-                eprintln!("Connection error: {}", e);
-            }
+            SinkConnection::listen(stream, state).await;
         });
     }
 }

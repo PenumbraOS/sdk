@@ -6,13 +6,11 @@ use crate::{
         HttpResponseComplete, HttpResponseHeaders, RequestOrigin, ServerToClientMessage,
     },
 };
-use bytes::Bytes;
-use futures::{SinkExt, StreamExt};
+use futures::StreamExt;
 use http::{HeaderMap, HeaderName, HeaderValue, Method};
-use prost::Message;
 use reqwest::Client;
 use std::io::ErrorKind;
-use tokio::io;
+use tokio::io::{self, AsyncRead, AsyncWrite};
 
 use crate::proto::HttpProxyRequest;
 
@@ -27,12 +25,15 @@ impl HttpState {
         }
     }
 
-    pub async fn request(
+    pub async fn request<T>(
         &mut self,
         request_id: String,
         request: HttpProxyRequest,
-        connection: SinkConnection,
-    ) -> Result<()> {
+        connection: SinkConnection<T>,
+    ) -> Result<()>
+    where
+        T: AsyncRead + AsyncWrite + Send + 'static,
+    {
         // Convert protobuf headers to HeaderMap
         let mut headers = HeaderMap::new();
         for h in request.headers {
@@ -68,11 +69,7 @@ impl HttpState {
                         },
                     )),
                 };
-                connection
-                    .lock()
-                    .await
-                    .send(Bytes::from(err_msg.encode_to_vec()))
-                    .await?;
+                connection.write(err_msg).await?;
                 return Ok(());
             }
         };
@@ -96,11 +93,7 @@ impl HttpState {
                 },
             )),
         };
-        connection
-            .lock()
-            .await
-            .send(Bytes::from(headers_msg.encode_to_vec()))
-            .await?;
+        connection.write(headers_msg).await?;
 
         // Stream body chunks
         let mut stream = response.bytes_stream();
@@ -116,11 +109,7 @@ impl HttpState {
                     },
                 )),
             };
-            connection
-                .lock()
-                .await
-                .send(Bytes::from(chunk_msg.encode_to_vec()))
-                .await?;
+            connection.write(chunk_msg).await?;
         }
 
         // Send completion
@@ -130,11 +119,7 @@ impl HttpState {
                 HttpResponseComplete {},
             )),
         };
-        connection
-            .lock()
-            .await
-            .send(Bytes::from(complete_msg.encode_to_vec()))
-            .await?;
+        connection.write(complete_msg).await?;
 
         Ok(())
     }
