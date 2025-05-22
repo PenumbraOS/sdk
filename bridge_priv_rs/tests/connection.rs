@@ -5,9 +5,11 @@ use bridge_priv_rs::{
     proto::{self, ClientToServerMessage, RequestOrigin},
     state::AppState,
 };
+use log::Level;
 use ntest::timeout;
 use prost::Message;
 use tcp_utils::{send_proto, MockTcpStream};
+use testing_logger::CapturedLog;
 use tokio::time::sleep;
 
 mod tcp_utils;
@@ -49,24 +51,40 @@ async fn test_invalid_message() {
     // simple_logger::SimpleLogger::new().env().init().unwrap();
     testing_logger::setup();
 
-    let (stream, mut handle) = MockTcpStream::new();
-    let state = AppState::new();
+    let test_message = |bytes: Vec<u8>, expected: String| async move {
+        let (stream, mut handle) = MockTcpStream::new();
+        let state = AppState::new();
 
-    // Send invalid message
-    handle.push_bytes(&[1]).await;
+        // Send invalid message
+        handle.push_bytes(&bytes).await;
 
-    tokio::spawn(async move {
-        SinkConnection::listen(stream, state).await;
-    });
+        tokio::spawn(async move {
+            SinkConnection::listen(stream, state).await;
+        });
 
-    // TODO: Make proper await of logs
-    sleep(Duration::from_millis(1000)).await;
+        // TODO: Make proper await of logs
+        sleep(Duration::from_millis(1000)).await;
 
-    testing_logger::validate(|logs| {
-        assert_eq!(logs.len(), 1);
-        assert_eq!(
-            logs[0].body,
-            "Could not process command: Protocol decode error"
-        )
-    });
+        testing_logger::validate(|logs| {
+            let logs = logs
+                .iter()
+                .filter(|l| l.level <= Level::Error)
+                .collect::<Vec<&CapturedLog>>();
+
+            assert_eq!(logs.len(), 1);
+            assert_eq!(logs[0].body, expected)
+        });
+    };
+
+    test_message(
+        vec![1, 1, 1, 1, 1],
+        "Could not process command: IO error frame size too big".into(),
+    )
+    .await;
+
+    test_message(
+        vec![1, 0, 0, 0, 1],
+        "Could not process command: Protocol decode error failed to decode Protobuf message: invalid tag value: 0".into(),
+    )
+    .await;
 }

@@ -55,6 +55,7 @@ where
             stream: Arc::new(Mutex::new(stream)),
         };
 
+        info!("Awaiting messages");
         let mut stream = sink.stream.lock().await;
         while let Some(message) = stream.next().await {
             let state = state.clone();
