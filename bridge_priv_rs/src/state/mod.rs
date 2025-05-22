@@ -13,7 +13,7 @@ use crate::{
     proto::{client_to_server_message, ClientToServerMessage},
 };
 
-mod http;
+pub mod http;
 
 pub struct AppState {
     http: HttpState,

@@ -43,23 +43,27 @@ impl<T> SinkConnection<T>
 where
     T: AsyncRead + AsyncWrite + Send + 'static,
 {
-    pub async fn listen(stream: T, state: Arc<Mutex<AppState>>) {
+    pub fn new(stream: T) -> Self {
         let framed = Framed::new(
             stream,
             LengthDelimitedCodec::builder().little_endian().new_codec(),
         );
         let (sink, stream) = framed.split();
 
-        let sink = SinkConnection {
+        Self {
             sink: Arc::new(Mutex::new(sink)),
             stream: Arc::new(Mutex::new(stream)),
-        };
+        }
+    }
+
+    pub async fn listen(stream: T, state: Arc<Mutex<AppState>>) {
+        let connection = SinkConnection::new(stream);
 
         info!("Awaiting messages");
-        let mut stream = sink.stream.lock().await;
+        let mut stream = connection.stream.lock().await;
         while let Some(message) = stream.next().await {
             let state = state.clone();
-            let sink = sink.clone();
+            let sink = connection.clone();
             tokio::spawn(async move {
                 if let Err(err) = sink.decode_and_process_command(message, state).await {
                     error!("Could not process command: {err}");
@@ -67,7 +71,7 @@ where
             });
         }
 
-        let _ = sink.sink.lock().await.close().await;
+        let _ = connection.sink.lock().await.close().await;
         info!("Connection closed");
     }
 

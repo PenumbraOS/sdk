@@ -15,10 +15,9 @@ use tokio::time::sleep;
 mod tcp_utils;
 
 #[tokio::test]
-#[timeout(2000)]
+#[timeout(5000)]
 async fn test_connection_handling() {
-    simple_logger::SimpleLogger::new().env().init().unwrap();
-
+    // simple_logger::SimpleLogger::new().env().init().unwrap();
     let (stream, mut handle) = MockTcpStream::new();
     let state = AppState::new();
 

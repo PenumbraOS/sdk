@@ -1,6 +1,5 @@
 use bytes::{Buf, BytesMut};
 use prost::Message;
-use std::io::Read;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
@@ -114,11 +113,6 @@ where
     M: Message,
 {
     let bytes = BytesMut::from(msg.encode_to_vec().as_slice());
-    println!(
-        "Sending {:02X?} {:02X?}",
-        &(bytes.len() as u32).to_le_bytes(),
-        bytes.bytes()
-    );
     handle.push_bytes(&(bytes.len() as u32).to_le_bytes()).await;
     handle.push_bytes(&bytes).await
 }
