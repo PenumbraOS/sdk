@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use http::HttpState;
+use log::info;
 use tokio::{
     io::{AsyncRead, AsyncWrite},
     sync::Mutex,
@@ -40,6 +41,8 @@ impl AppState {
         let payload = message
             .payload
             .ok_or_else(|| Error::ProtocolHandleError("No payload provided".into()))?;
+
+        info!("Processing {payload:?}");
 
         match payload {
             client_to_server_message::Payload::HttpRequest(request) => {

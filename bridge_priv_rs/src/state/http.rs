@@ -8,6 +8,7 @@ use crate::{
 };
 use futures::StreamExt;
 use http::{HeaderMap, HeaderName, HeaderValue, Method};
+use log::{error, info};
 use reqwest::Client;
 use std::io::ErrorKind;
 use tokio::io::{self, AsyncRead, AsyncWrite};
@@ -50,6 +51,7 @@ impl HttpState {
             Err(err) => Err(<http::method::InvalidMethod as Into<Error>>::into(err))?,
         };
 
+        info!("Making HTTP request to {}", request.url);
         let response = match self
             .client
             .request(method, &request.url)
@@ -58,8 +60,12 @@ impl HttpState {
             .send()
             .await
         {
-            Ok(res) => res,
+            Ok(res) => {
+                info!("Received HTTP response with status: {}", res.status());
+                res
+            }
             Err(e) => {
+                error!("HTTP request failed: {}", e);
                 let err_msg = ServerToClientMessage {
                     origin: Some(RequestOrigin { id: request_id }),
                     payload: Some(server_to_client_message::Payload::HttpError(
@@ -69,6 +75,7 @@ impl HttpState {
                         },
                     )),
                 };
+                info!("Sending error response");
                 connection.write(err_msg).await?;
                 return Ok(());
             }

@@ -5,8 +5,11 @@ use crate::{
 use std::sync::Arc;
 
 use bytes::{Bytes, BytesMut};
-use futures::{stream::SplitSink, SinkExt, StreamExt};
-use log::error;
+use futures::{
+    stream::{SplitSink, SplitStream},
+    SinkExt, StreamExt,
+};
+use log::{error, info};
 use prost::Message;
 use tokio::{
     io::{self, AsyncRead, AsyncWrite},
@@ -21,6 +24,7 @@ where
     T: AsyncRead + AsyncWrite + Send,
 {
     sink: Arc<Mutex<SplitSink<Framed<T, LengthDelimitedCodec>, Bytes>>>,
+    stream: Arc<Mutex<SplitStream<Framed<T, LengthDelimitedCodec>>>>,
 }
 
 impl<T> Clone for SinkConnection<T>
@@ -30,6 +34,7 @@ where
     fn clone(&self) -> Self {
         Self {
             sink: self.sink.clone(),
+            stream: self.stream.clone(),
         }
     }
 }
@@ -39,13 +44,18 @@ where
     T: AsyncRead + AsyncWrite + Send + 'static,
 {
     pub async fn listen(stream: T, state: Arc<Mutex<AppState>>) {
-        let framed = Framed::new(stream, LengthDelimitedCodec::new());
-        let (sink, mut stream) = framed.split();
+        let framed = Framed::new(
+            stream,
+            LengthDelimitedCodec::builder().little_endian().new_codec(),
+        );
+        let (sink, stream) = framed.split();
 
         let sink = SinkConnection {
             sink: Arc::new(Mutex::new(sink)),
+            stream: Arc::new(Mutex::new(stream)),
         };
 
+        let mut stream = sink.stream.lock().await;
         while let Some(message) = stream.next().await {
             let state = state.clone();
             let sink = sink.clone();
@@ -55,6 +65,9 @@ where
                 }
             });
         }
+
+        let _ = sink.sink.lock().await.close().await;
+        info!("Connection closed");
     }
 
     pub async fn write(&self, message: ServerToClientMessage) -> Result<()> {

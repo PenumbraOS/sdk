@@ -14,9 +14,12 @@ futures-util = "0.3"
 thiserror = "1.0"
 http = "0.2.12"
 log = "0.4.27"
+simple_logger = "5.0.0"
 
 [dev-dependencies]
 tokio-test = "0.4"
+testing_logger = "0.1.1"
+ntest = "0.9.3"
 
 [build-dependencies]
 prost-build = "0.12"
