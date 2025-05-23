@@ -27,6 +27,13 @@ class BridgeService : Service(), ICallbackDelegate {
 
     private val binder = object : IBridge.Stub() {
         @Throws(RemoteException::class)
+        override fun ping() {
+            if (client?.isConnected() != true) {
+                throw RemoteException("Not connected to TCP proxy")
+            }
+        }
+
+        @Throws(RemoteException::class)
         override fun makeHttpRequest(
             requestId: String,
             url: String,

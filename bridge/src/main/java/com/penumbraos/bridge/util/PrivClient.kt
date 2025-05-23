@@ -59,6 +59,8 @@ internal class PrivClient(val scope: CoroutineScope, val delegate: ICallbackDele
         }
     }
 
+    fun isConnected(): Boolean = isConnected.get()
+
     fun startMessageLoop() = scope.launch {
         launch {
             for (message in messageChannel) {

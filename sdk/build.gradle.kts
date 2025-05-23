@@ -37,15 +37,26 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+
+    packaging {
+        resources.excludes += "META-INF/DEPENDENCIES"
+    }
+}
+
+configurations.all {
+    exclude(group = "com.google.guava", module = "listenablefuture")
 }
 
 dependencies {
     implementation(project(":bridge"))
-    
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(kotlin("test"))
 }

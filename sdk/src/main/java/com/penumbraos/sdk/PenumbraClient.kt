@@ -48,4 +48,17 @@ class PenumbraClient(private val context: Context) {
 
         return service!!
     }
+
+    /**
+     * Simple ping method to verify service connectivity
+     * @return true if service is responsive, false otherwise
+     */
+    fun ping(): Boolean {
+        return try {
+            getService().ping()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
 }
