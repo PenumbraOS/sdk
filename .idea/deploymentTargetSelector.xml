@@ -7,6 +7,14 @@
       </SelectionState>
       <SelectionState runConfigName="SDKBridge.example">
         <option name="selectionMode" value="DROPDOWN" />
+        <DropdownSelection timestamp="2025-05-23T02:18:21.930593Z">
+          <Target type="DEFAULT_BOOT">
+            <handle>
+              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/adam/.android/avd/Humane_AI_Pin_Zygote.avd" />
+            </handle>
+          </Target>
+        </DropdownSelection>
+        <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="SDK Tests">
         <option name="selectionMode" value="DROPDOWN" />

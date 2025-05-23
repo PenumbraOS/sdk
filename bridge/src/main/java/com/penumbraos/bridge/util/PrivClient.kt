@@ -20,7 +20,11 @@ import java.net.SocketAddress
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-internal class PrivClient(val scope: CoroutineScope, val delegate: ICallbackDelegate) {
+internal class PrivClient(
+    val scope: CoroutineScope,
+    val delegate: ICallbackDelegate,
+    val address: SocketAddress
+) {
     private var socket: Socket? = null
     private var output: DataOutputStream? = null
     private var input: DataInputStream? = null
@@ -29,15 +33,22 @@ internal class PrivClient(val scope: CoroutineScope, val delegate: ICallbackDele
 
     private val httpCallbacks = ConcurrentHashMap<String, IHttpCallback>()
 
-    suspend fun connect(host: String, port: Int) {
+    constructor(host: String, port: Int, scope: CoroutineScope, delegate: ICallbackDelegate) : this(
+        scope,
+        delegate,
+        InetSocketAddress(host, port)
+    )
+
+    suspend fun connect() {
         withContext(Dispatchers.IO) {
             socket = Socket().also {
+                it.connect(address)
                 output = DataOutputStream(it.getOutputStream())
                 input = DataInputStream(it.getInputStream())
                 isConnected.set(true)
-                Log.d(TAG, "Connected to TCP server")
+                Log.w(TAG, "Connected to TCP server")
             }
-            socket?.connect(InetSocketAddress(host, port))
+            startMessageLoop()
         }
     }
 
@@ -51,7 +62,9 @@ internal class PrivClient(val scope: CoroutineScope, val delegate: ICallbackDele
     }
 
     suspend fun sendMessage(message: MessageLite) {
-        if (!isConnected.get()) throw IOException("Not connected")
+        if (!isConnected.get()) {
+            connect()
+        }
         try {
             messageChannel.send(message)
         } catch (e: ClosedSendChannelException) {
@@ -84,11 +97,18 @@ internal class PrivClient(val scope: CoroutineScope, val delegate: ICallbackDele
                 try {
                     delegate.callback(message)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Callback failed with message type ${message.payloadCase}, error:" , e)
+                    Log.e(
+                        TAG,
+                        "Callback failed with message type ${message.payloadCase}, error:",
+                        e
+                    )
                     try {
-                        delegate.genericError(message.origin.id, "Callback failed with message type ${message.payloadCase}")
+                        delegate.genericError(
+                            message.origin.id,
+                            "Callback failed with message type ${message.payloadCase}"
+                        )
                     } catch (e: Exception) {
-                        Log.e(TAG, "Sending generic error failed. Terminating:" , e)
+                        Log.e(TAG, "Sending generic error failed. Terminating:", e)
                         disconnect()
                         break
                     }

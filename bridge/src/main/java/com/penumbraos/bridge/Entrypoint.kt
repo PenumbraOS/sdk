@@ -1,13 +1,12 @@
 package com.penumbraos.bridge
 
+import android.annotation.SuppressLint
 import android.os.Looper
 import android.util.Log;
 
 class Entrypoint {
-//    public static void main(String[] args) {
-//
-//    }
     companion object {
+        @SuppressLint("PrivateApi")
         @JvmStatic
         fun main(args: Array<String>) {
             Looper.prepare()
@@ -17,9 +16,11 @@ class Entrypoint {
                 val service = BridgeService()
                 val serviceManager = Class.forName("android.os.ServiceManager")
                 val iBinderClass = Class.forName("android.os.IBinder")
-                val addService = serviceManager.getMethod("addService", String::class.java, iBinderClass)
+                val addService =
+                    serviceManager.getMethod("addService", String::class.java, iBinderClass)
 
                 val castedBinder = iBinderClass.cast(service.asBinder())
+                Log.w("SDKBridge", "Registering bridge")
                 addService.invoke(null, "nfc", castedBinder)
                 Log.w("SDKBridge", "Successfully registered service");
             } catch (e: Exception) {

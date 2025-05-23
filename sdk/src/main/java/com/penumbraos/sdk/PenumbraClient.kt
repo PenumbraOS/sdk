@@ -1,45 +1,36 @@
 package com.penumbraos.sdk
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
+import android.annotation.SuppressLint
 import android.os.DeadObjectException
 import android.os.IBinder
 import com.penumbraos.bridge.IBridge
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.WebSocketClient
 
-class PenumbraClient(private val context: Context) {
+class PenumbraClient {
     private var service: IBridge? = null
     val http = HttpClient(this)
     val websocket = WebSocketClient(this)
 
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+    constructor() {
+        this.initialize()
+    }
+
+    @SuppressLint("PrivateApi")
+    fun initialize() {
+        try {
+            // We must reflect as this is a private API
+            val serviceManager = Class.forName("android.os.ServiceManager")
+            val getService = serviceManager.getMethod("getService", String::class.java)
+
+            val binder = getService.invoke(null, "nfc") as IBinder
             service = IBridge.Stub.asInterface(binder)
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            service = null
+        } catch (e: Exception) {
+            throw Exception("Failed to connect to service bridge", e)
         }
     }
 
-    fun initialize(): Boolean {
-        val intent = Intent().apply {
-            setComponent(ComponentName(
-                "com.penumbraos.bridge",
-                "com.penumbraos.bridge.FriendlyAPIService"
-            ))
-        }
-        return context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
-    }
-
-    fun isConnected(): Boolean = service != null
-
-    fun disconnect() {
-        context.unbindService(connection)
-    }
+    fun isConnected(): Boolean = service?.asBinder()?.isBinderAlive == true
 
     internal fun getService(): IBridge {
         if (service == null) {
@@ -55,7 +46,7 @@ class PenumbraClient(private val context: Context) {
      */
     fun ping(): Boolean {
         return try {
-            getService().ping()
+            getService().asBinder().pingBinder()
             true
         } catch (e: Exception) {
             false

@@ -5,7 +5,7 @@ use tokio::net::TcpListener;
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let state = AppState::new();
-    let listener = TcpListener::bind("127.0.0.1:8080").await?;
+    let listener = TcpListener::bind("127.0.0.1:1720").await?;
     println!("Server listening on {}", listener.local_addr()?);
 
     loop {
