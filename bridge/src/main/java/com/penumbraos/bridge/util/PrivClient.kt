@@ -17,6 +17,8 @@ import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketAddress
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -89,7 +91,14 @@ internal class PrivClient(
 
         while (isConnected.get()) {
             try {
-                val length = input?.readInt() ?: break
+                val bytes = ByteArray(4)
+                val bytesRead = input?.read(bytes)
+                if (bytesRead != 4) {
+                    throw IOException("Could not read request length");
+                }
+
+                val length = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt()
+
                 val buffer = ByteArray(length)
                 input?.readFully(buffer)
 

@@ -3,6 +3,7 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
       <module name="SDKBridge.bridge.sdk" target="21" />
+      <module name="SDKBridge.shared" target="21" />
     </bytecodeTargetLevel>
   </component>
 </project>

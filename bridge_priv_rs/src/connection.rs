@@ -12,7 +12,7 @@ use futures::{
 use log::{error, info};
 use prost::Message;
 use tokio::{
-    io::{self, AsyncRead, AsyncWrite},
+    io::{AsyncRead, AsyncWrite},
     sync::Mutex,
 };
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
@@ -62,13 +62,18 @@ where
         info!("Awaiting messages");
         let mut stream = connection.stream.lock().await;
         while let Some(message) = stream.next().await {
-            let state = state.clone();
-            let sink = connection.clone();
-            tokio::spawn(async move {
-                if let Err(err) = sink.decode_and_process_command(message, state).await {
-                    error!("Could not process command: {err}");
+            match message {
+                Ok(message) => {
+                    let state = state.clone();
+                    let sink = connection.clone();
+                    tokio::spawn(async move {
+                        if let Err(err) = sink.decode_and_process_command(message, state).await {
+                            error!("Could not process command: {err}");
+                        }
+                    });
                 }
-            });
+                Err(err) => error!("Framing error: {err}"),
+            }
         }
 
         let _ = connection.sink.lock().await.close().await;
@@ -87,11 +92,10 @@ where
 
     async fn decode_and_process_command(
         self,
-        message: std::result::Result<BytesMut, io::Error>,
+        message: BytesMut,
         state: Arc<Mutex<AppState>>,
     ) -> Result<()> {
-        let bytes = message?;
-        let message = ClientToServerMessage::decode(bytes)?;
+        let message = ClientToServerMessage::decode(message)?;
 
         state.lock().await.handle_command(message, self).await
     }
