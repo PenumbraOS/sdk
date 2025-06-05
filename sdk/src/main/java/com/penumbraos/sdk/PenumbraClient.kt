@@ -1,19 +1,76 @@
 package com.penumbraos.sdk
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.DeadObjectException
 import android.os.IBinder
+import android.util.Log
 import com.penumbraos.bridge.IBridge
+import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.WebSocketClient
 
+val TAG = "PenumbraClient"
+
 class PenumbraClient {
     private var service: IBridge? = null
+    private var context: Context
+    var serviceReadyReceiver: BroadcastReceiver? = null
+    var bridgeReadyListener: (() -> Unit)? = null
+
     val http = HttpClient(this)
     val websocket = WebSocketClient(this)
 
-    constructor() {
-        this.initialize()
+    constructor(context: Context, allowInitFailure: Boolean = false) {
+        this.context = context
+        registerBroadcastListener()
+        try {
+            this.initialize()
+        } catch (e: Exception) {
+            if (!allowInitFailure) {
+                throw e
+            }
+
+            Log.e(TAG, "Failed to initialize bridge", e)
+        }
+    }
+
+    constructor(
+        context: Context,
+        bridgeReadyListener: (() -> Unit),
+        allowInitFailure: Boolean = false
+    ) : this(
+        context, allowInitFailure
+    ) {
+        this.bridgeReadyListener = bridgeReadyListener
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    private fun registerBroadcastListener() {
+        serviceReadyReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                // This method is called when the broadcast is received
+
+                // Always check the action to be safe, although the filter should handle this
+                if (BRIDGE_SERVICE_READY == intent?.action) {
+                    Log.d(TAG, "Received bridge service ready")
+
+                    try {
+                        initialize()
+                        bridgeReadyListener?.invoke()
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+                }
+            }
+        }
+
+        context.registerReceiver(
+            serviceReadyReceiver, IntentFilter(BRIDGE_SERVICE_READY),
+        )
     }
 
     @SuppressLint("PrivateApi")

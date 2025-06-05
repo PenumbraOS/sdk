@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    var client: PenumbraClient? = null
 
 //    private var networkService: INetworkService? = null
 //    private var isServiceBound by mutableStateOf(false)
@@ -87,13 +88,13 @@ class MainActivity : ComponentActivity() {
 //        } catch (e: Exception) {
 //            Log.e("MainActivity", "Error connecting to socket", e)
 //        }
-
         try {
-            val client = PenumbraClient()
-            CoroutineScope(Dispatchers.IO).launch {
-                val response = client.http.request("https://example.com", HttpMethod.GET)
-                Log.w("MainActivity", "Response: $response")
-            }
+            client = PenumbraClient(applicationContext, {
+                Log.w("MainActivity", "Sending deferred request")
+                makeRequest()
+            }, true)
+
+            makeRequest()
         } catch (e: SecurityException) {
 //                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."
             Log.e("MainActivity", "SecurityException binding to service", e)
@@ -103,6 +104,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 //    }
+
+    fun makeRequest() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = client!!.http.request("https://example.com", HttpMethod.GET)
+                Log.w("MainActivity", "Response: $response")
+            } catch (e: Exception) {
+                Log.e("MainActivity", "General Exception", e)
+            }
+        }
+    }
 
     override fun onStop() {
         super.onStop()
