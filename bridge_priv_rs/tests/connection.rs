@@ -77,7 +77,7 @@ async fn test_invalid_message() {
 
     test_message(
         vec![1, 1, 1, 1, 1],
-        "Could not process command: IO error frame size too big".into(),
+        "Framing error: frame size too big".into(),
     )
     .await;
 

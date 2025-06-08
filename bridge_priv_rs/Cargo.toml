@@ -22,6 +22,7 @@ ai_pin_logger = { git = "https://github.com/PenumbraOS/ai_pin_logger-rs.git" }
 tokio-test = "0.4"
 testing_logger = "0.1.1"
 ntest = "0.9.3"
+tokio-tungstenite = "0.26"
 
 [build-dependencies]
 prost-build = "0.12"
