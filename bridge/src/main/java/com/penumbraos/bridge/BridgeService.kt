@@ -9,6 +9,10 @@ import com.penumbraos.ipc.proxy.Ipc.HttpHeader
 import com.penumbraos.ipc.proxy.Ipc.HttpProxyRequest
 import com.penumbraos.ipc.proxy.Ipc.RequestOrigin
 import com.penumbraos.ipc.proxy.Ipc.ServerToClientMessage
+import com.penumbraos.ipc.proxy.Ipc.WebSocketCloseProxyRequest
+import com.penumbraos.ipc.proxy.Ipc.WebSocketMessageType
+import com.penumbraos.ipc.proxy.Ipc.WebSocketOpenProxyRequest
+import com.penumbraos.ipc.proxy.Ipc.WebSocketProxyMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -24,6 +28,7 @@ class BridgeService : ICallbackDelegate {
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
     private val httpCallbacks = ConcurrentHashMap<String, IHttpCallback>()
+    private val webSocketCallbacks = ConcurrentHashMap<String, IWebSocketCallback>()
     internal var client: PrivClient? = null
 
     constructor() {
@@ -40,8 +45,95 @@ class BridgeService : ICallbackDelegate {
 
     private val binder = object : IBridge.Stub() {
         @Throws(RemoteException::class)
-        override fun pingBinder(): Boolean {
-            return client?.isConnected() == true
+        override fun openWebSocket(
+            requestId: String,
+            url: String,
+            headers: Map<*, *>,
+            callback: IWebSocketCallback
+        ) {
+            Log.d(TAG, "Opening WebSocket $requestId for $url")
+            webSocketCallbacks[requestId] = callback
+
+            serviceScope.launch {
+                try {
+                    val client = client ?: throw IOException("Privileged client not connected")
+
+                    val request = ClientToServerMessage.newBuilder()
+                        .setOrigin(RequestOrigin.newBuilder().setId(requestId).build())
+                        .setWsOpenRequest(
+                            WebSocketOpenProxyRequest.newBuilder()
+                                .setUrl(url)
+                                .addAllHeaders(headers.map { (k, v) ->
+                                    HttpHeader.newBuilder()
+                                        .setKey(k.toString())
+                                        .setValue(v.toString())
+                                        .build()
+                                })
+                                .build()
+                        )
+                        .build()
+
+                    client.sendMessage(request)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to open WebSocket $requestId", e)
+                    try {
+                        callback.onError(requestId, e.message ?: "Unknown error")
+                    } catch (re: RemoteException) {
+                        Log.e(TAG, "Failed to send error callback", re)
+                    }
+                    webSocketCallbacks.remove(requestId)
+                }
+            }
+        }
+
+        @Throws(RemoteException::class)
+        override fun closeWebSocket(requestId: String) {
+            Log.d(TAG, "Closing WebSocket $requestId")
+            serviceScope.launch {
+                try {
+                    val client = client ?: throw IOException("Privileged client not connected")
+
+                    val request = ClientToServerMessage.newBuilder()
+                        .setOrigin(RequestOrigin.newBuilder().setId(requestId).build())
+                        .setWsCloseRequest(WebSocketCloseProxyRequest.newBuilder().build())
+                        .build()
+
+                    client.sendMessage(request)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to close WebSocket $requestId", e)
+                }
+            }
+        }
+
+        @Throws(RemoteException::class)
+        override fun sendWebSocketMessage(
+            requestId: String,
+            type: Int,
+            data: ByteArray
+        ) {
+            Log.d(TAG, "Sending WebSocket message for $requestId")
+            serviceScope.launch {
+                try {
+                    val client = client ?: throw IOException("Privileged client not connected")
+
+                    val request = ClientToServerMessage.newBuilder()
+                        .setOrigin(RequestOrigin.newBuilder().setId(requestId).build())
+                        .setWsMessageToServer(
+                            WebSocketProxyMessage.newBuilder()
+                                .setType(
+                                    WebSocketMessageType.forNumber(type)
+                                        ?: WebSocketMessageType.TEXT
+                                )
+                                .setData(com.google.protobuf.ByteString.copyFrom(data))
+                                .build()
+                        )
+                        .build()
+
+                    client.sendMessage(request)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to send WebSocket message $requestId", e)
+                }
+            }
         }
 
         @Throws(RemoteException::class)
@@ -88,6 +180,11 @@ class BridgeService : ICallbackDelegate {
                 }
             }
         }
+
+        @Throws(RemoteException::class)
+        override fun pingBinder(): Boolean {
+            return client?.isConnected() == true
+        }
     }
 
     fun asBinder(): IBridge = binder
@@ -122,12 +219,43 @@ class BridgeService : ICallbackDelegate {
                 )
             }
 
+            ServerToClientMessage.PayloadCase.WS_OPENED -> {
+                val callback = webSocketCallbacks[message.origin.id]
+                callback?.onOpen(
+                    message.origin.id,
+                    message.wsOpened.headersList.associate { h -> h.key to h.value }
+                )
+            }
+
+            ServerToClientMessage.PayloadCase.WS_MESSAGE_FROM_SERVER -> {
+                val callback = webSocketCallbacks[message.origin.id]
+                callback?.onMessage(
+                    message.origin.id,
+                    message.wsMessageFromServer.type.number,
+                    message.wsMessageFromServer.data.toByteArray()
+                )
+            }
+
+            ServerToClientMessage.PayloadCase.WS_ERROR -> {
+                val callback = webSocketCallbacks.remove(message.origin.id)
+                callback?.onError(
+                    message.origin.id,
+                    message.wsError.errorMessage
+                )
+            }
+
+            ServerToClientMessage.PayloadCase.WS_CLOSED_FROM_SERVER -> {
+                val callback = webSocketCallbacks.remove(message.origin.id)
+                callback?.onClose(message.origin.id)
+            }
+
             else -> Log.w(TAG, "Unknown message type")
         }
     }
 
     override fun genericError(requestId: String, errorMessage: String) {
         httpCallbacks.remove(requestId)
+        webSocketCallbacks.remove(requestId)
         Log.e(TAG, "Generic error: $errorMessage")
     }
 }
