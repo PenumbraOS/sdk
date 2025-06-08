@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    `maven-publish`
 }
 
 android {
@@ -25,8 +26,11 @@ android {
     }
     sourceSets {
         named("main") {
+            java {
+                srcDir("${project.rootDir}/bridge-shared/java")
+            }
             aidl {
-                srcDir("../bridge/src/main/aidl")
+                srcDir("${project.rootDir}/bridge-shared/aidl")
             }
         }
     }
@@ -41,6 +45,10 @@ android {
     packaging {
         resources.excludes += "META-INF/DEPENDENCIES"
     }
+
+    buildFeatures {
+        aidl = true
+    }
 }
 
 configurations.all {
@@ -48,8 +56,6 @@ configurations.all {
 }
 
 dependencies {
-    implementation(project(":bridge"))
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -60,4 +66,18 @@ dependencies {
     androidTestImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     androidTestImplementation(libs.kotlinx.coroutines.test)
     testImplementation(kotlin("test"))
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            groupId = "com.penumbraos"
+            artifactId = "sdk"
+            version = "0.1.0"
+
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
 }

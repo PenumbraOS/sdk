@@ -1,5 +1,4 @@
 import com.google.protobuf.gradle.proto
-import org.gradle.api.tasks.testing.Test
 
 plugins {
     alias(libs.plugins.android.application)
@@ -22,6 +21,12 @@ android {
     }
     sourceSets {
         named("main") {
+            java {
+                srcDir("${project.rootDir}/bridge-shared/java")
+            }
+            aidl {
+                srcDir("${project.rootDir}/bridge-shared/aidl")
+            }
             proto {
                 srcDirs("${project.rootDir}/bridge_priv_rs/proto")
             }
