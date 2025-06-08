@@ -2,6 +2,7 @@ package com.penumbraos.bridge
 
 import android.os.RemoteException
 import android.util.Log
+import com.google.protobuf.ByteString
 import com.penumbraos.bridge.util.ICallbackDelegate
 import com.penumbraos.bridge.util.PrivClient
 import com.penumbraos.ipc.proxy.Ipc.ClientToServerMessage
@@ -124,7 +125,7 @@ class BridgeService : ICallbackDelegate {
                                     WebSocketMessageType.forNumber(type)
                                         ?: WebSocketMessageType.TEXT
                                 )
-                                .setData(com.google.protobuf.ByteString.copyFrom(data))
+                                .setData(ByteString.copyFrom(data))
                                 .build()
                         )
                         .build()

@@ -9,6 +9,10 @@ import com.penumbraos.ipc.proxy.Ipc.HttpHeader
 import com.penumbraos.ipc.proxy.Ipc.HttpResponseHeaders
 import com.penumbraos.ipc.proxy.Ipc.RequestOrigin
 import com.penumbraos.ipc.proxy.Ipc.ServerToClientMessage
+import com.penumbraos.ipc.proxy.Ipc.WebSocketClosedFromServer
+import com.penumbraos.ipc.proxy.Ipc.WebSocketMessageType
+import com.penumbraos.ipc.proxy.Ipc.WebSocketOpenedResponse
+import com.penumbraos.ipc.proxy.Ipc.WebSocketProxyMessage
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -69,8 +73,6 @@ class BridgeServiceTest {
         every { anyConstructed<Socket>().isClosed } returns false
 
         val baseService = spyk<BridgeService>()
-        // Force creation of client
-        baseService.onCreate()
         mockCallback = mockk(relaxed = true)
         service = baseService.apply {
             mockClient = client!!
@@ -146,16 +148,152 @@ class BridgeServiceTest {
     }
 
     @Test
-    fun testCleansUpCallbacksOnServiceDestroy() = runTest {
-        val requestId = "test789"
+    fun testOpenWebSocketSerializesCorrectProtobuf() = runTest {
         coEvery { mockClient.sendMessage(any()) } just Runs
-        service.asBinder().makeHttpRequest(
-            requestId, "https://example.com", "GET", null, emptyMap<String, String>(), mockCallback
+        val requestId = "ws-test123"
+        val url = "wss://example.com/ws"
+        val mockWsCallback = mockk<IWebSocketCallback>(relaxed = true)
+
+        service.asBinder().openWebSocket(requestId, url, emptyMap<String, String>(), mockWsCallback)
+        advanceUntilIdle()
+
+        val messageSlot = slot<ClientToServerMessage>()
+        coVerify { mockClient.sendMessage(capture(messageSlot)) }
+
+        val message = messageSlot.captured
+        assert(message.origin.id == requestId)
+        assert(message.wsOpenRequest.url == url)
+    }
+
+    @Test
+    fun testHandlesTcpDisconnectionDuringWebSocketOpen() = runTest {
+        coEvery { mockClient.sendMessage(any()) } throws IOException("Connection failed")
+        val requestId = "ws-test456"
+        val mockWsCallback = mockk<IWebSocketCallback>(relaxed = true)
+
+        service.asBinder().openWebSocket(
+            requestId,
+            "wss://example.com",
+            emptyMap<String, String>(),
+            mockWsCallback
+        )
+        advanceUntilIdle()
+
+        coVerify { mockWsCallback.onError(requestId, "Connection failed") }
+    }
+
+    @Test
+    fun testHandlesCallbackWhenWebSocketClientDies() = runTest {
+        val requestId = "ws-test789"
+        val mockWsCallback = mockk<IWebSocketCallback>(relaxed = true)
+        every { mockWsCallback.onOpen(any(), any()) } throws RemoteException("Client died")
+
+        service.asBinder().openWebSocket(
+            requestId,
+            "wss://example.com",
+            emptyMap<String, String>(),
+            mockWsCallback
         )
 
-        advanceUntilIdle()
-        service.onDestroy()
+        val message = ServerToClientMessage.newBuilder()
+            .setOrigin(RequestOrigin.newBuilder().setId(requestId).build())
+            .setWsOpened(
+                WebSocketOpenedResponse.newBuilder()
+                    .addAllHeaders(
+                        listOf(
+                            HttpHeader.newBuilder().setKey("foo").setValue("bar").build()
+                        )
+                    )
+                    .build()
+            ).build()
 
-        verify { mockClient.disconnect() }
+        writeMessage(message, testToClient)
+        advanceUntilIdle()
+
+        coVerify { mockWsCallback.onOpen(requestId, any()) }
+        verify {
+            service.genericError(
+                requestId,
+                "Callback failed with message type WS_OPENED"
+            )
+        }
+    }
+
+    @Test
+    fun testSendWebSocketMessageSerializesCorrectProtobuf() = runTest {
+        coEvery { mockClient.sendMessage(any()) } just Runs
+        val requestId = "ws-test101"
+        val testData = "test message".toByteArray()
+
+        service.asBinder()
+            .sendWebSocketMessage(requestId, WebSocketMessageType.TEXT.number, testData)
+        advanceUntilIdle()
+
+        val messageSlot = slot<ClientToServerMessage>()
+        coVerify { mockClient.sendMessage(capture(messageSlot)) }
+
+        val message = messageSlot.captured
+        assert(message.origin.id == requestId)
+        assert(message.wsMessageToServer.type == WebSocketMessageType.TEXT)
+        assert(message.wsMessageToServer.data.toByteArray().contentEquals(testData))
+    }
+
+    @Test
+    fun testReceivesWebSocketMessage() = runTest {
+        val requestId = "ws-test202"
+        val mockWsCallback = mockk<IWebSocketCallback>(relaxed = true)
+        val testMessage = "test message".toByteArray()
+
+        service.asBinder().openWebSocket(
+            requestId,
+            "wss://example.com",
+            emptyMap<String, String>(),
+            mockWsCallback
+        )
+
+        val message = ServerToClientMessage.newBuilder()
+            .setOrigin(RequestOrigin.newBuilder().setId(requestId).build())
+            .setWsMessageFromServer(
+                WebSocketProxyMessage.newBuilder()
+                    .setType(WebSocketMessageType.TEXT)
+                    .setData(com.google.protobuf.ByteString.copyFrom(testMessage))
+                    .build()
+            ).build()
+
+        writeMessage(message, testToClient)
+        advanceUntilIdle()
+
+        coVerify {
+            mockWsCallback.onMessage(
+                requestId,
+                WebSocketMessageType.TEXT.number,
+                testMessage
+            )
+        }
+    }
+
+    @Test
+    fun testHandlesWebSocketClose() = runTest {
+        val requestId = "ws-test303"
+        val mockWsCallback = mockk<IWebSocketCallback>(relaxed = true)
+
+        service.asBinder().openWebSocket(
+            requestId,
+            "wss://example.com",
+            emptyMap<String, String>(),
+            mockWsCallback
+        )
+
+        val message = ServerToClientMessage.newBuilder()
+            .setOrigin(RequestOrigin.newBuilder().setId(requestId).build())
+            .setWsClosedFromServer(
+                WebSocketClosedFromServer.newBuilder().setCode(123)
+                    .setReason("Custom closed reason")
+            ).build()
+
+        writeMessage(message, testToClient)
+        advanceUntilIdle()
+
+        coVerify { mockWsCallback.onClose(requestId) }
     }
 }
