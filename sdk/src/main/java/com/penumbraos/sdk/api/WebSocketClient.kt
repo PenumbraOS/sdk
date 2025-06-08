@@ -1,7 +1,6 @@
 package com.penumbraos.sdk.api
 
 import com.penumbraos.bridge.IWebSocketCallback
-import com.penumbraos.ipc.proxy.Ipc.WebSocketMessageType
 import com.penumbraos.sdk.PenumbraClient
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -9,9 +8,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-enum class MessageType(val value: Int) {
-    TEXT(WebSocketMessageType.TEXT.number),
-    BINARY(WebSocketMessageType.BINARY.number)
+enum class WebSocketMessageType(val value: Int) {
+    // These need to match the Protobuf values
+    TEXT(0),
+    BINARY(1)
 }
 
 class WebSocketClient(private val sdk: PenumbraClient) {
@@ -32,8 +32,8 @@ class WebSocketClient(private val sdk: PenumbraClient) {
 
             override fun onMessage(requestId: String, type: Int, data: ByteArray) {
                 val messageType = when (type) {
-                    WebSocketMessageType.BINARY.number -> MessageType.BINARY
-                    else -> MessageType.TEXT
+                    WebSocketMessageType.BINARY.value -> WebSocketMessageType.BINARY
+                    else -> WebSocketMessageType.TEXT
                 }
                 activeSessions[requestId]?.messageHandler?.invoke(messageType, data)
             }
@@ -63,7 +63,7 @@ class WebSocketClient(private val sdk: PenumbraClient) {
         }
     }
 
-    internal fun sendMessage(sessionId: String, type: MessageType, data: ByteArray) {
+    internal fun sendMessage(sessionId: String, type: WebSocketMessageType, data: ByteArray) {
         sdk.getService().sendWebSocketMessage(sessionId, type.value, data)
     }
 
@@ -76,7 +76,7 @@ class WebSocketClient(private val sdk: PenumbraClient) {
         val sessionId: String,
         val client: WebSocketClient,
         var continuation: kotlin.coroutines.Continuation<WebSocket>? = null,
-        var messageHandler: ((MessageType, ByteArray) -> Unit)? = null,
+        var messageHandler: ((WebSocketMessageType, ByteArray) -> Unit)? = null,
         var closeHandler: (() -> Unit)? = null,
         val callback: IWebSocketCallback? = null
     )
@@ -91,7 +91,7 @@ class WebSocketClient(private val sdk: PenumbraClient) {
             client.activeSessions[sessionId]?.continuation = continuation
         }
 
-        fun onMessage(handler: (type: MessageType, data: ByteArray) -> Unit) {
+        fun onMessage(handler: (type: WebSocketMessageType, data: ByteArray) -> Unit) {
             client.activeSessions[sessionId]?.messageHandler = handler
         }
 
@@ -99,7 +99,8 @@ class WebSocketClient(private val sdk: PenumbraClient) {
             client.activeSessions[sessionId]?.closeHandler = handler
         }
 
-        fun send(type: MessageType, data: ByteArray) = client.sendMessage(sessionId, type, data)
+        fun send(type: WebSocketMessageType, data: ByteArray) =
+            client.sendMessage(sessionId, type, data)
 
         fun close() = client.close(sessionId)
     }
