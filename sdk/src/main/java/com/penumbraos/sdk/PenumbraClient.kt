@@ -13,7 +13,7 @@ import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.WebSocketClient
 
-val TAG = "PenumbraClient"
+const val TAG = "PenumbraClient"
 
 class PenumbraClient {
     private var service: IBridge? = null
