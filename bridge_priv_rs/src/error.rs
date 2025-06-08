@@ -8,6 +8,8 @@ pub enum Error {
     IO(#[from] io::Error),
     #[error("HTTP error {0}")]
     ReqwestError(#[from] reqwest::Error),
+    #[error("WebSocket error {0}")]
+    ReqwestWebSocketError(#[from] reqwest_websocket::Error),
     #[error("HTTP error {0}")]
     HttpError(#[from] http::method::InvalidMethod),
     #[error("Protocol decode error {0}")]

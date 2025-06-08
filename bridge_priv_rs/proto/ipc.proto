@@ -66,8 +66,14 @@ message WebSocketOpenProxyRequest {
   repeated HttpHeader headers = 2;
 }
 
+enum WebSocketMessageType {
+  TEXT = 0;
+  BINARY = 1;
+}
+
 message WebSocketProxyMessage {
-  bytes data = 1;
+  WebSocketMessageType type = 1;
+  bytes data = 2;
 }
 
 message WebSocketCloseProxyRequest {

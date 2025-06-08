@@ -5,13 +5,13 @@ use crate::{
         server_to_client_message, HttpHeader, HttpRequestError, HttpResponseBodyChunk,
         HttpResponseComplete, HttpResponseHeaders, RequestOrigin, ServerToClientMessage,
     },
+    state::util::header_map,
 };
 use futures::StreamExt;
-use http::{HeaderMap, HeaderName, HeaderValue, Method};
+use http::Method;
 use log::{error, info};
 use reqwest::Client;
-use std::io::ErrorKind;
-use tokio::io::{self, AsyncRead, AsyncWrite};
+use tokio::io::{AsyncRead, AsyncWrite};
 
 use crate::proto::HttpProxyRequest;
 
@@ -35,16 +35,7 @@ impl HttpState {
     where
         T: AsyncRead + AsyncWrite + Send + 'static,
     {
-        // Convert protobuf headers to HeaderMap
-        let mut headers = HeaderMap::new();
-        for h in request.headers {
-            headers.insert(
-                HeaderName::from_bytes(h.key.as_bytes())
-                    .map_err(|e| io::Error::new(ErrorKind::InvalidData, e))?,
-                HeaderValue::from_str(&h.value)
-                    .map_err(|e| io::Error::new(ErrorKind::InvalidData, e))?,
-            );
-        }
+        let headers = header_map(request.headers)?;
 
         let method = match Method::from_bytes(request.method.as_bytes()) {
             Ok(method) => method,

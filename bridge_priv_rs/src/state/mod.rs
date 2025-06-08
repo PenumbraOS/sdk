@@ -14,15 +14,19 @@ use crate::{
 };
 
 pub mod http;
+mod util;
+pub mod websocket;
 
 pub struct AppState {
     http: HttpState,
+    ws: websocket::WebSocketState,
 }
 
 impl AppState {
     pub fn new() -> Arc<Mutex<Self>> {
         Arc::new(Mutex::new(Self {
             http: HttpState::new(),
+            ws: websocket::WebSocketState::new(),
         }))
     }
 
@@ -48,14 +52,14 @@ impl AppState {
             client_to_server_message::Payload::HttpRequest(request) => {
                 self.http.request(request_id, request, connection).await?;
             }
-            client_to_server_message::Payload::WsOpenRequest(_request) => {
-                todo!()
+            client_to_server_message::Payload::WsOpenRequest(request) => {
+                self.ws.open(request_id, request, connection).await?;
             }
-            client_to_server_message::Payload::WsMessageToServer(_request) => {
-                todo!()
+            client_to_server_message::Payload::WsMessageToServer(request) => {
+                self.ws.send_message(request_id, request).await?;
             }
-            client_to_server_message::Payload::WsCloseRequest(_request) => {
-                todo!()
+            client_to_server_message::Payload::WsCloseRequest(request) => {
+                self.ws.close(request_id, request).await?;
             }
         }
 

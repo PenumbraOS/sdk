@@ -31,7 +31,7 @@ fn init_logging_with_tag(tag: String) {
 }
 
 #[cfg(not(target_os = "android"))]
-fn init_logging_with_tag(tag: String) {
+fn init_logging_with_tag(_tag: String) {
     use simple_logger::SimpleLogger;
 
     let _ = SimpleLogger::new().init();
