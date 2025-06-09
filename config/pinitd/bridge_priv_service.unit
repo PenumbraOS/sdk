@@ -1,0 +1,4 @@
+[Service]
+Name=bridge-priv-service
+Uid=2000
+Exec=/data/local/tmp/bin/bridge_priv
