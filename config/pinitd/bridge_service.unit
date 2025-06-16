@@ -1,3 +1,6 @@
+[Unit]
+Wants=bridge-priv-service
+
 [Service]
 Name=bridge-service
 Uid=1027
