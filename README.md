@@ -34,7 +34,7 @@ This is an active work in progress and may be difficult to set up. Please reach 
 
 ```bash
 settings delete global hidden_api_blacklist_exemptions && am force-stop com.android.settings
-am start -n im.agg.pinitd/.DummyActivity
+am start -n com.penumbraos.pinitd/.ManualLaunchActivity
 ```
 
 but this will change in the future.
