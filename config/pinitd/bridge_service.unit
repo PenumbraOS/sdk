@@ -1,5 +1,5 @@
 [Unit]
-Wants=bridge-priv-service
+Wants=mabl,bridge-priv-service
 
 [Service]
 Name=bridge-service

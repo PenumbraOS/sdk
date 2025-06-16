@@ -1,0 +1,4 @@
+[Service]
+Name=mabl
+;ExecActivity=com.penumbraos.mabl/.MainActivity
+ExecActivity=com.aipin.realtime/.MainActivity
