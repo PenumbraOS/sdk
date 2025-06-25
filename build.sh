@@ -4,5 +4,6 @@ adb push bridge_priv_rs/target/aarch64-linux-android/release/bridge_priv_rs /dat
 adb shell chmod +x /data/local/tmp/bin/bridge_priv
 adb push config/pinitd/* /sdcard/penumbra/etc/pinitd/system/
 
-./gradlew :bridge:installDebug
+./gradlew :bridge-core:installDebug
+./gradlew :bridge-system:installDebug
 ./gradlew :example:installDebug

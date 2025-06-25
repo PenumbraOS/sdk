@@ -10,7 +10,8 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
-            <option value="$PROJECT_DIR$/bridge" />
+            <option value="$PROJECT_DIR$/bridge-core" />
+            <option value="$PROJECT_DIR$/bridge-system" />
             <option value="$PROJECT_DIR$/example" />
             <option value="$PROJECT_DIR$/sdk" />
           </set>

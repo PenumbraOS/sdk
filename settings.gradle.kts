@@ -20,6 +20,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SDKBridge"
-include(":bridge")
+include(":bridge-core")
 include(":example")
 include(":sdk")
+include(":bridge-system")

@@ -1,0 +1,4 @@
+[Service]
+Name=bridge-system-service
+Uid=1000
+ExecJvmClass=com.penumbraos.bridge_system/com.penumbraos.bridge_system.Entrypoint
