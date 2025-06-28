@@ -13,7 +13,7 @@ import com.penumbraos.bridge.ITouchpadProvider
 private const val TOUCHPAD_MONITOR_NAME = "Humane Touchpad Monitor"
 private const val TOUCHPAD_DISPLAY_ID = 3344
 
-class TouchpadProviderService(private val looper: Looper) :
+class TouchpadProvider(private val looper: Looper) :
     ITouchpadProvider.Stub() {
     private val callbacks = mutableListOf<ITouchpadCallback>()
 

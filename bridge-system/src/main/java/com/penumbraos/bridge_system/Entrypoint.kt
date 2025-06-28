@@ -27,9 +27,9 @@ class Entrypoint {
             try {
                 val bridge = IBridge.Stub.asInterface(ServiceManager.getService("nfc"))
                 Log.w(TAG, "Received bridge $bridge")
-                bridge.registerHttpProvider(HttpProviderService())
-                bridge.registerWebSocketProvider(WebSocketProviderService())
-                bridge.registerTouchpadProvider(TouchpadProviderService(looper))
+                bridge.registerHttpProvider(HttpProvider())
+                bridge.registerWebSocketProvider(WebSocketProvider())
+                bridge.registerTouchpadProvider(TouchpadProvider(looper))
                 Log.w(TAG, "Registered system bridge")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting bridge", e)

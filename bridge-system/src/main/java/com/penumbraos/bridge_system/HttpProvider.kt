@@ -10,7 +10,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
 
-class HttpProviderService : IHttpProvider.Stub() {
+class HttpProvider : IHttpProvider.Stub() {
 
     private val client = OkHttpClient()
 

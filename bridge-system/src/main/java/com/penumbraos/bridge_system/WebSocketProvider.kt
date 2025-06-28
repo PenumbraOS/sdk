@@ -11,7 +11,7 @@ import okhttp3.WebSocketListener
 import okio.ByteString
 import java.util.concurrent.ConcurrentHashMap
 
-class WebSocketProviderService : IWebSocketProvider.Stub() {
+class WebSocketProvider : IWebSocketProvider.Stub() {
 
     private val client = OkHttpClient()
     private val webSockets = ConcurrentHashMap<String, WebSocket>()
