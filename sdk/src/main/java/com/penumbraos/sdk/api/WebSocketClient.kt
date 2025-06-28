@@ -1,7 +1,7 @@
 package com.penumbraos.sdk.api
 
 import com.penumbraos.bridge.IWebSocketCallback
-import com.penumbraos.sdk.PenumbraClient
+import com.penumbraos.bridge.IWebSocketProvider
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume
@@ -9,12 +9,11 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 enum class WebSocketMessageType(val value: Int) {
-    // These need to match the Protobuf values
     TEXT(0),
     BINARY(1)
 }
 
-class WebSocketClient(private val sdk: PenumbraClient) {
+class WebSocketClient(private val webSocketProvider: IWebSocketProvider) {
     private val activeSessions = ConcurrentHashMap<String, WebSocketSession>()
 
     suspend fun connect(
@@ -57,19 +56,19 @@ class WebSocketClient(private val sdk: PenumbraClient) {
         )
 
         try {
-            sdk.getService().openWebSocket(sessionId, url, headers, callback)
+            webSocketProvider.openWebSocket(sessionId, url, headers, callback)
         } catch (e: Exception) {
             continuation.resumeWithException(e)
         }
     }
 
     internal fun sendMessage(sessionId: String, type: WebSocketMessageType, data: ByteArray) {
-        sdk.getService().sendWebSocketMessage(sessionId, type.value, data)
+        webSocketProvider.sendWebSocketMessage(sessionId, type.value, data)
     }
 
     internal fun close(sessionId: String) {
         activeSessions.remove(sessionId)
-        sdk.getService().closeWebSocket(sessionId)
+        webSocketProvider.closeWebSocket(sessionId)
     }
 
     private data class WebSocketSession(

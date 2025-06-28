@@ -1,7 +1,7 @@
 package com.penumbraos.sdk.api
 
 import com.penumbraos.bridge.IHttpCallback
-import com.penumbraos.sdk.PenumbraClient
+import com.penumbraos.bridge.IHttpProvider
 import java.io.ByteArrayOutputStream
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -18,7 +18,7 @@ enum class HttpMethod(val value: String) {
 }
 
 @Suppress("UNCHECKED_CAST")
-class HttpClient(private val sdk: PenumbraClient) {
+class HttpClient(private val httpProvider: IHttpProvider) {
     private val pendingRequests = ConcurrentHashMap<String, IHttpCallback>()
 
     suspend fun request(
@@ -64,7 +64,7 @@ class HttpClient(private val sdk: PenumbraClient) {
         }
 
         pendingRequests[requestId] = callback
-        sdk.getService().makeHttpRequest(requestId, url, method.value, body, headers, callback)
+        httpProvider.makeHttpRequest(requestId, url, method.value, body, headers, callback)
     }
 
     data class Response(

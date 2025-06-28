@@ -6,15 +6,7 @@ import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.IBridge
 
-import com.penumbraos.bridge.IServiceProvider
-
 const val TAG = "SystemBridgeService"
-
-class ServiceProvider : IServiceProvider.Stub() {
-    override fun handleRequest(request: String?) {
-        Log.d(TAG, "Got request: $request")
-    }
-}
 
 @SuppressLint("DiscouragedPrivateApi", "PrivateApi")
 class Entrypoint {
@@ -35,7 +27,8 @@ class Entrypoint {
             try {
                 val bridge = IBridge.Stub.asInterface(ServiceManager.getService("nfc"))
                 Log.w(TAG, "Received bridge $bridge")
-                bridge.registerServiceProvider("system", ServiceProvider())
+                bridge.registerHttpProvider(HttpProviderService())
+                bridge.registerWebSocketProvider(WebSocketProviderService())
                 Log.w(TAG, "Registered system bridge")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting bridge", e)

@@ -1,14 +1,11 @@
 package com.penumbraos.bridge;
 
-import com.penumbraos.bridge.IHttpCallback;
-import com.penumbraos.bridge.IWebSocketCallback;
-import com.penumbraos.bridge.IServiceProvider;
+import com.penumbraos.bridge.IHttpProvider;
+import com.penumbraos.bridge.IWebSocketProvider;
 
 interface IBridge {
-    void makeHttpRequest(String requestId, String url, String method, String body, in Map headers, IHttpCallback callback);
-    void openWebSocket(String requestId, String url, in Map headers, IWebSocketCallback callback);
-    void sendWebSocketMessage(String requestId, int type, in byte[] data);
-    void closeWebSocket(String requestId);
-    void registerServiceProvider(String name, IServiceProvider provider);
-    void sendMessageToServiceProvider(String name, String message);
+    IBinder getHttpProvider();
+    IBinder getWebSocketProvider();
+    void registerHttpProvider(IHttpProvider provider);
+    void registerWebSocketProvider(IWebSocketProvider provider);
 }
