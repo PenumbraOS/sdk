@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
 
-    id("im.agg.android12-system-jars") version "1.0.2"
+    alias(libs.plugins.systemjars)
 }
 
 android {

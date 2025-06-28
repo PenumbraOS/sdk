@@ -1,9 +1,8 @@
-import com.google.protobuf.gradle.proto
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.protobuf)
+
+    alias(libs.plugins.systemjars)
 }
 
 android {
@@ -26,9 +25,6 @@ android {
             }
             aidl {
                 srcDir("${project.rootDir}/bridge-shared/aidl")
-            }
-            proto {
-                srcDirs("${project.rootDir}/bridge_priv_rs/proto")
             }
         }
     }
@@ -58,21 +54,6 @@ android {
     }
 }
 
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:${libs.versions.protobufJava.get()}"
-    }
-    generateProtoTasks {
-        all().forEach { task ->
-            task.builtins {
-                create("java") {
-                    option("lite")
-                }
-            }
-        }
-    }
-}
-
 tasks.withType<Test> {
     testLogging {
         events("passed", "skipped", "failed")
@@ -85,8 +66,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
-    implementation(libs.protobuf.javalite)
-    implementation(libs.protobuf.kotlin.lite)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 

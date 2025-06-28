@@ -3,8 +3,6 @@ package com.penumbraos.bridge
 import android.os.IBinder
 import android.util.Log
 
-const val TAG = "BridgeService"
-
 class BridgeService {
 
     private var httpProvider: IHttpProvider? = null

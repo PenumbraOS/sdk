@@ -4,9 +4,13 @@ import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Intent
 import android.os.Bundle
+import android.os.IBinder
 import android.os.Looper
+import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
+
+const val TAG = "BridgeService"
 
 @SuppressLint("DiscouragedPrivateApi", "PrivateApi")
 class Entrypoint {
@@ -14,37 +18,31 @@ class Entrypoint {
         @JvmStatic
         fun main(args: Array<String>) {
             Looper.prepare()
-            Log.w("SDKBridge", "Starting bridge")
+            Log.w(TAG, "Starting bridge")
 
             val looper = Looper.myLooper()
 
             Runtime.getRuntime().addShutdownHook(Thread {
-                Log.w("SDKBridge", "Shutting down bridge")
+                Log.w(TAG, "Shutting down bridge")
                 looper?.quitSafely()
-                Log.w("SDKBridge", "Terminating")
+                Log.w(TAG, "Terminating")
             })
 
             try {
-                val service = BridgeService()
-                val serviceManager = Class.forName("android.os.ServiceManager")
-                val iBinderClass = Class.forName("android.os.IBinder")
-                val addService =
-                    serviceManager.getMethod("addService", String::class.java, iBinderClass)
-
-                val castedBinder = iBinderClass.cast(service.asBinder())
-                Log.w("SDKBridge", "Registering bridge")
-                addService.invoke(null, "nfc", castedBinder)
-                Log.w("SDKBridge", "Successfully registered service")
+                val service = BridgeService().asBinder() as IBinder
+                Log.w(TAG, "Registering bridge")
+                ServiceManager.addService("nfc", service)
+                Log.w(TAG, "Successfully registered service")
                 sendStartBroadcast()
             } catch (e: Exception) {
-                Log.e("SDKBridge", "Error starting bridge", e)
+                Log.e(TAG, "Error starting bridge", e)
                 looper?.quit()
                 return
             }
 
-            Log.w("SDKBridge", "Bridge started")
+            Log.w(TAG, "Bridge started")
             Looper.loop()
-            Log.w("SDKBridge", "Bridge quit")
+            Log.w(TAG, "Bridge quit")
         }
 
         fun sendStartBroadcast() {
@@ -54,7 +52,7 @@ class Entrypoint {
                 val activityManager = getServiceMethod.invoke(null)
 
                 if (activityManager == null) {
-                    Log.e("SDKBridge", "Activity manager is null. Cannot send start broadcast")
+                    Log.e(TAG, "Activity manager is null. Cannot send start broadcast")
                     return
                 }
 
@@ -104,9 +102,9 @@ class Entrypoint {
                     -1 // userId
                 )
 
-                Log.e("SDKBridge", "Sent bridge ready broadcast")
+                Log.e(TAG, "Sent bridge ready broadcast")
             } catch (e: Exception) {
-                Log.e("SDKBridge", "Error sending start broadcast", e)
+                Log.e(TAG, "Error sending start broadcast", e)
             }
         }
     }
