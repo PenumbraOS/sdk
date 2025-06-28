@@ -16,11 +16,11 @@ class Entrypoint {
             Looper.prepare()
             Log.w(TAG, "Starting bridge")
 
-            val looper = Looper.myLooper()
+            val looper = Looper.myLooper() as Looper
 
             Runtime.getRuntime().addShutdownHook(Thread {
                 Log.w(TAG, "Shutting down bridge")
-                looper?.quitSafely()
+                looper.quitSafely()
                 Log.w("SDKBridge", "Terminating")
             })
 
@@ -29,10 +29,11 @@ class Entrypoint {
                 Log.w(TAG, "Received bridge $bridge")
                 bridge.registerHttpProvider(HttpProviderService())
                 bridge.registerWebSocketProvider(WebSocketProviderService())
+                bridge.registerTouchpadProvider(TouchpadProviderService(looper))
                 Log.w(TAG, "Registered system bridge")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting bridge", e)
-                looper?.quit()
+                looper.quit()
                 return
             }
 

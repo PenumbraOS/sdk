@@ -2,11 +2,13 @@ package com.penumbraos.sdkexample
 
 import android.os.Bundle
 import android.util.Log
+import android.view.InputEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.penumbraos.sdk.PenumbraClient
 import com.penumbraos.sdk.api.HttpMethod
+import com.penumbraos.sdk.api.TouchpadInputReceiver
 import com.penumbraos.sdkexample.ui.theme.SDKExampleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -92,13 +94,20 @@ class MainActivity : ComponentActivity() {
             client = PenumbraClient(applicationContext, {
                 Log.w("MainActivity", "Sending deferred request")
                 Thread.sleep(20000)
-                Log.w("MainActivity", "Pinging $client")
-                client?.ping()
+                client?.touchpad?.register(object : TouchpadInputReceiver {
+                    override fun onInputEvent(event: InputEvent) {
+                        Log.w("MainActivity", "Touchpad event: $event")
+                    }
+                })
                 makeRequest()
             }, true)
 
             Log.w("MainActivity", "Pinging $client")
-            client?.ping()
+            client?.touchpad?.register(object : TouchpadInputReceiver {
+                override fun onInputEvent(event: InputEvent) {
+                    Log.w("MainActivity", "Touchpad event: $event")
+                }
+            })
             makeRequest()
         } catch (e: SecurityException) {
 //                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."

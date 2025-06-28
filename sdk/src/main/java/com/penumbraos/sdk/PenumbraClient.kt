@@ -10,8 +10,10 @@ import android.util.Log
 import com.penumbraos.bridge.IBridge
 import com.penumbraos.bridge.IHttpProvider
 import com.penumbraos.bridge.IWebSocketProvider
+import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.HttpClient
+import com.penumbraos.sdk.api.TouchpadClient
 import com.penumbraos.sdk.api.WebSocketClient
 
 const val TAG = "PenumbraClient"
@@ -24,6 +26,7 @@ class PenumbraClient {
 
     lateinit var http: HttpClient
     lateinit var websocket: WebSocketClient
+    lateinit var touchpad: TouchpadClient
 
     constructor(context: Context, allowInitFailure: Boolean = false) {
         this.context = context
@@ -82,9 +85,11 @@ class PenumbraClient {
 
             val httpProvider = IHttpProvider.Stub.asInterface(service!!.getHttpProvider())
             val webSocketProvider = IWebSocketProvider.Stub.asInterface(service!!.getWebSocketProvider())
+            val touchpadProvider = ITouchpadProvider.Stub.asInterface(service!!.getTouchpadProvider())
 
             http = HttpClient(httpProvider)
             websocket = WebSocketClient(webSocketProvider)
+            touchpad = TouchpadClient(touchpadProvider)
         } catch (e: Exception) {
             throw Exception("Failed to connect to service bridge", e)
         }
