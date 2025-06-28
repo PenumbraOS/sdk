@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+
+    id("im.agg.android12-system-jars") version "1.0.2"
 }
 
 android {
@@ -31,10 +33,19 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    sourceSets {
+        named("main") {
+            java {
+                srcDir("${project.rootDir}/bridge-shared/java")
+            }
+            aidl {
+                srcDir("${project.rootDir}/bridge-shared/aidl")
+            }
+        }
+    }
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

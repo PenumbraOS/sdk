@@ -6,7 +6,7 @@ Name=bridge-service
 Uid=1027
 ;If doing active debugging, use the follow script and uncomment the following line to manually run bridge:
 ;nc 127.0.0.1 1234
-;/system/bin/app_process -cp [INSERT_BRIDGE_PACKAGE_PATH] /system/bin --application com.penumbraos.bridge.Entrypoint
-;Exec=toybox nc -s 127.0.0.1 -p 1234 -L /system/bin/sh -l;
-ExecJvmClass=com.penumbraos.bridge/com.penumbraos.bridge.Entrypoint
+;/system/bin/app_process -cp $(pm path com.penumbraos.bridge | sed 's/^package://') /system/bin --application com.penumbraos.bridge.Entrypoint
+Exec=toybox nc -s 127.0.0.1 -p 1234 -L /system/bin/sh -l;
+;ExecJvmClass=com.penumbraos.bridge/com.penumbraos.bridge.Entrypoint
 SeInfo=platform:nfc

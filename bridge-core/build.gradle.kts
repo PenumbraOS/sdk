@@ -90,9 +90,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
 
-//    implementation("net.bytebuddy:byte-buddy:1.14.12")
-    compileOnly(files("/Users/adam/Downloads/android.jar"))
-
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

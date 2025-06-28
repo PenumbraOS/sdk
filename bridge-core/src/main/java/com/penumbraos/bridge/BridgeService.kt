@@ -44,6 +44,8 @@ class BridgeService : ICallbackDelegate {
         }
     }
 
+    private val serviceProviders = ConcurrentHashMap<String, IServiceProvider>()
+
     private val binder = object : IBridge.Stub() {
         @Throws(RemoteException::class)
         override fun openWebSocket(
@@ -147,6 +149,7 @@ class BridgeService : ICallbackDelegate {
             callback: IHttpCallback
         ) {
             Log.d(TAG, "HTTP request $requestId for $url")
+            serviceProviders["system"]?.handleRequest("ping")
             httpCallbacks[requestId] = callback
 
             serviceScope.launch {
@@ -184,7 +187,25 @@ class BridgeService : ICallbackDelegate {
 
         @Throws(RemoteException::class)
         override fun pingBinder(): Boolean {
+            Log.w(TAG, "Pinged binder, $serviceProviders")
+            serviceProviders["system"]?.handleRequest("ping")
             return client?.isConnected() == true
+        }
+
+        @Throws(RemoteException::class)
+        override fun registerServiceProvider(name: String, provider: IServiceProvider) {
+            Log.w(TAG, "Registering service provider: $name")
+            serviceProviders[name] = provider
+        }
+
+        @Throws(RemoteException::class)
+        override fun sendMessageToServiceProvider(name: String, message: String) {
+            val provider = serviceProviders[name]
+            if (provider == null) {
+                Log.e(TAG, "Service provider not found: $name")
+                return
+            }
+            provider.handleRequest(message)
         }
     }
 

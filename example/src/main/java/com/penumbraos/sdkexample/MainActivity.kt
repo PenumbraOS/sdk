@@ -91,9 +91,14 @@ class MainActivity : ComponentActivity() {
         try {
             client = PenumbraClient(applicationContext, {
                 Log.w("MainActivity", "Sending deferred request")
+                Thread.sleep(20000)
+                Log.w("MainActivity", "Pinging $client")
+                client?.ping()
                 makeRequest()
             }, true)
 
+            Log.w("MainActivity", "Pinging $client")
+            client?.ping()
             makeRequest()
         } catch (e: SecurityException) {
 //                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."

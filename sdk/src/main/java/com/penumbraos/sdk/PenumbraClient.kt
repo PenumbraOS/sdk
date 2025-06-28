@@ -103,9 +103,10 @@ class PenumbraClient {
      */
     fun ping(): Boolean {
         return try {
+            Log.w(TAG, "Pinging NFC bridge service")
             getService().asBinder().pingBinder()
-            true
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to ping NFC bridge service", e)
             false
         }
     }
