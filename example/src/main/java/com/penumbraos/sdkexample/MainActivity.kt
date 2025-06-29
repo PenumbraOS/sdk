@@ -1,6 +1,7 @@
 package com.penumbraos.sdkexample
 
 import android.os.Bundle
+import android.speech.SpeechRecognizer
 import android.util.Log
 import android.view.InputEvent
 import androidx.activity.ComponentActivity
@@ -16,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-    var client: PenumbraClient? = null
+    lateinit var client: PenumbraClient
 
 //    private var networkService: INetworkService? = null
 //    private var isServiceBound by mutableStateOf(false)
@@ -79,23 +80,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-//        Intent("com.penumbraos.bridge.INetworkService").also { intent ->
-//            // The bridge app (com.penumbraos.bridge) must be installed for this to work.
-//            // And it must be running as system user if it's to have special permissions.
-//            intent.`package` = "com.penumbraos.bridge" // Explicitly specify the package
-//        try {
-//            val socket = java.net.Socket("127.0.0.1", 4444) // Connect to localhost:8080
-//            Log.w("MainActivity", "Connected to socket")
-//            socket.outputStream.write("hello world".toByteArray())
-//            socket.close()
-//        } catch (e: Exception) {
-//            Log.e("MainActivity", "Error connecting to socket", e)
-//        }
         try {
             client = PenumbraClient(applicationContext, {
                 Log.w("MainActivity", "Sending deferred request")
                 Thread.sleep(20000)
-                client?.touchpad?.register(object : TouchpadInputReceiver {
+                client.touchpad.register(object : TouchpadInputReceiver {
                     override fun onInputEvent(event: InputEvent) {
                         Log.w("MainActivity", "Touchpad event: $event")
                     }
@@ -103,27 +92,33 @@ class MainActivity : ComponentActivity() {
                 makeRequest()
             }, true)
 
+            // Hack to start STT service in advance of usage
+            client.stt.launchListenerProcess(applicationContext)
+
             Log.w("MainActivity", "Pinging $client")
-            client?.touchpad?.register(object : TouchpadInputReceiver {
+            client.touchpad.register(object : TouchpadInputReceiver {
                 override fun onInputEvent(event: InputEvent) {
                     Log.w("MainActivity", "Touchpad event: $event")
                 }
             })
-            client?.stt?.setRecognitionListener(object : SttRecognitionListener() {
+            client.stt.setRecognitionListener(object : SttRecognitionListener() {
                 override fun onError(error: Int) {
                     Log.w("MainActivity", "STT Error: $error")
                 }
 
                 override fun onResults(results: Bundle?) {
-                    Log.w("MainActivity", "STT Results: $results")
+                    val lines = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    Log.w("MainActivity", "STT Results: $lines")
                 }
 
                 override fun onPartialResults(partialResults: Bundle?) {
-                    Log.w("MainActivity", "STT Partial Results: $partialResults")
+                    val lines =
+                        partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    Log.w("MainActivity", "STT Partial Results: $lines")
                 }
             })
 
-            client?.stt?.startListening()
+            client.stt.startListening()
             makeRequest()
         } catch (e: SecurityException) {
 //                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."
