@@ -8,7 +8,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.penumbraos.sdk.PenumbraClient
 import com.penumbraos.sdk.api.HttpMethod
-import com.penumbraos.sdk.api.TouchpadInputReceiver
+import com.penumbraos.sdk.api.types.SttRecognitionListener
+import com.penumbraos.sdk.api.types.TouchpadInputReceiver
 import com.penumbraos.sdkexample.ui.theme.SDKExampleTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -108,6 +109,21 @@ class MainActivity : ComponentActivity() {
                     Log.w("MainActivity", "Touchpad event: $event")
                 }
             })
+            client?.stt?.setRecognitionListener(object : SttRecognitionListener() {
+                override fun onError(error: Int) {
+                    Log.w("MainActivity", "STT Error: $error")
+                }
+
+                override fun onResults(results: Bundle?) {
+                    Log.w("MainActivity", "STT Results: $results")
+                }
+
+                override fun onPartialResults(partialResults: Bundle?) {
+                    Log.w("MainActivity", "STT Partial Results: $partialResults")
+                }
+            })
+
+            client?.stt?.startListening()
             makeRequest()
         } catch (e: SecurityException) {
 //                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."
