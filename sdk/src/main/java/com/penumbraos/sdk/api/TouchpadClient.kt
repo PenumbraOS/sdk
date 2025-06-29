@@ -3,6 +3,7 @@ package com.penumbraos.sdk.api
 import android.view.InputEvent
 import com.penumbraos.bridge.ITouchpadCallback
 import com.penumbraos.bridge.ITouchpadProvider
+import com.penumbraos.sdk.api.types.TouchpadInputReceiver
 import java.util.concurrent.ConcurrentHashMap
 
 class TouchpadClient(private val touchpadProvider: ITouchpadProvider) {

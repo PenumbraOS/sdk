@@ -1,4 +1,4 @@
-package com.penumbraos.sdk.api
+package com.penumbraos.sdk.api.types
 
 import android.view.InputEvent
 
