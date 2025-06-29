@@ -1,4 +1,4 @@
-package com.penumbraos.bridge_system
+package com.penumbraos.bridge_system.provider
 
 import android.content.Context
 import android.content.Intent
@@ -92,14 +92,20 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
                 putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
             }
 
-            Log.w(TAG, "My: ${Looper.myLooper()}, main: ${Looper.getMainLooper()}")
+            Log.w(
+                TAG,
+                "My: ${Looper.myLooper()}, main: ${Looper.getMainLooper()}"
+            )
             speechRecognizer?.startListening(intent)
         }
     }
 
     override fun stopListening(callback: ISttRecognitionListener?) {
         if (callback != currentListener) {
-            Log.w(TAG, "stopListening called with a different listener than currently active.")
+            Log.w(
+                TAG,
+                "stopListening called with a different listener than currently active."
+            )
             return
         }
 
@@ -110,7 +116,10 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
 
     override fun cancel(callback: ISttRecognitionListener?) {
         if (callback != currentListener) {
-            Log.w(TAG, "cancel called with a different listener than currently active.")
+            Log.w(
+                TAG,
+                "cancel called with a different listener than currently active."
+            )
             return
         }
         speechRecognizer?.cancel()

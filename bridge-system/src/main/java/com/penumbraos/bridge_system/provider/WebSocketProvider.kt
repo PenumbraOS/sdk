@@ -1,4 +1,4 @@
-package com.penumbraos.bridge_system
+package com.penumbraos.bridge_system.provider
 
 import android.util.Log
 import com.penumbraos.bridge.IWebSocketCallback
@@ -65,7 +65,7 @@ class WebSocketProvider : IWebSocketProvider.Stub() {
             if (type == 0) {
                 webSocket.send(String(data))
             } else {
-                webSocket.send(ByteString.of(*data))
+                webSocket.send(ByteString.Companion.of(*data))
             }
         } else {
             Log.e("WebSocketProviderService", "WebSocket not found for requestId: $requestId")

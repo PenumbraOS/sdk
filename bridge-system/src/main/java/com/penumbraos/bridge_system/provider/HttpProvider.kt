@@ -1,4 +1,4 @@
-package com.penumbraos.bridge_system
+package com.penumbraos.bridge_system.provider
 
 import com.penumbraos.bridge.IHttpCallback
 import com.penumbraos.bridge.IHttpProvider

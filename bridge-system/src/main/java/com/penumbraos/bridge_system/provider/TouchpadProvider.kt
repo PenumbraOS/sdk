@@ -1,4 +1,4 @@
-package com.penumbraos.bridge_system
+package com.penumbraos.bridge_system.provider
 
 import android.hardware.input.IInputManager
 import android.os.Looper
