@@ -5,6 +5,15 @@ This is the SDK for [PenumbraOS](https://github.com/PenumbraOS/), the full devel
 > [!CAUTION]
 > This is extremely experimental and currently is usable by developers only. See [Installation](#installation) for in-progress instructions on how to set it up.
 
+## Current functionality
+
+The PenumbraOS SDK exposes the following restricted interfaces on the Ai Pin:
+
+- [HTTP](sdk/src/main/java/com/penumbraos/sdk/api/HttpClient.kt) - Custom API implementation. Hopefully will add `OkHttp` handler soon
+- [WebSocket](sdk/src/main/java/com/penumbraos/sdk/api/WebSocketClient.kt) - Custom API implementation. Hopefully will add `OkHttp` handler soon
+- [Touchpad](sdk/src/main/java/com/penumbraos/sdk/api/TouchpadClient.kt)
+- [Speech Recognition](sdk/src/main/java/com/penumbraos/sdk/api/SttClient.kt)
+
 ## Architecture
 
 Due to the locked down nature of the Humane Ai Pin, actually achieving access to "privileged" operations is very convoluted (`untrusted_app` cannot even access the network). The PenumbraOS SDK is designed to mitigate the setup issues and make a repeatable solution suitable for end users. The general spawn capabilities are provided by the [`pinitd`](https://github.com/PenumbraOS/pinitd/) init system.
@@ -17,9 +26,9 @@ This is the actual exposed API surface to developers, run from within your `untr
 
 Quite literally just a bridge between the SDK and the privileged world. `untrusted_app` on the Pin is restricted to making binder connections to exclusively the `nfc` and `radio` SELinux domains. Since `radio` is everything having to do with cellular which is always in use, `nfc` becomes the obvious choice. [`pinitd`](https://github.com/PenumbraOS/pinitd/) is used to spawn a process as the `nfc` user and domain, and `app_process` is used to set up the JVM and run the actual service. Located in `/bridge`.
 
-### Bridge Privileged Daemon
+### Bridge System Service
 
-The gateway to all actual privileged operations. Currently, all operations are exclusively things that can run in the `shell` domain (which is where the `pinitd` controller operates), so `bridge_priv_rs` also runs in `shell`. Spawns a TCP server for access from Bridge backed by a simple Protobuf protocol. Future optimization may necessitate direct TCP streams forwarded through Binder, but that would add complexity that is unnecessary at this time. Located in `/bridge_priv_rs`.
+The gateway to all actual privileged operations. Currently, all operations are exclusively things that can run in the `system` domain, so `bridge-system` also runs in `system`. Communicates with `bridge-core` over Binder. Located in `/bridge-system`.
 
 ## Installation
 
@@ -33,8 +42,7 @@ This is an active work in progress and may be difficult to set up. Please reach 
 3. Start `pinitd`. At the time of writing this is accomplished by running:
 
 ```bash
-settings delete global hidden_api_blacklist_exemptions && am force-stop com.android.settings
-am start -n com.penumbraos.pinitd/.ManualLaunchActivity
+/data/local/tmp/bin/pinitd-cli debug-manual-start
 ```
 
 but this will change in the future.
@@ -42,15 +50,17 @@ but this will change in the future.
 4. Enable the required services:
 
 ```bash
-./data/local/tmp/bin/pinitd-cli enable bridge-priv-service
-./data/local/tmp/bin/pinitd-cli enable bridge-service
-./data/local/tmp/bin/pinitd-cli enable mabl
+/data/local/tmp/bin/pinitd-cli enable bridge-service
+/data/local/tmp/bin/pinitd-cli enable bridge-system-service
+/data/local/tmp/bin/pinitd-cli enable mabl
 ```
 
-5. Once `pinitd` is running and the services are enabled, you can start the bridge services. `bridge-service` depends on everything else (including MABL), so it will automatically launch all services as necessary on startup.
+5. Once `pinitd` is running and the services are enabled, you can start the bridge services. ~~`bridge-service` depends on everything else (including MABL), so it will automatically launch all services as necessary on startup.~~
 
 ```bash
-./data/local/tmp/bin/pinitd-cli start bridge-service
+/data/local/tmp/bin/pinitd-cli start bridge-service
+sleep 5
+/data/local/tmp/bin/pinitd-cli start bridge-system-service
 ```
 
 6. At this point, everything should be operational and the custom app should be able to talk to the PenumbraOS SDK. To avoid the app starting issue, you can use the "Apply changes" button in Android Studio to update your app without relaunching.

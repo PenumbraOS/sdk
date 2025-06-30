@@ -1,4 +1,4 @@
-adb shell mkdir /data/local/tmp/bin
+adb shell mkdir -p /sdcard/penumbra/etc/pinitd/system/
 adb push config/pinitd/* /sdcard/penumbra/etc/pinitd/system/
 
 ./gradlew :bridge-core:installDebug
