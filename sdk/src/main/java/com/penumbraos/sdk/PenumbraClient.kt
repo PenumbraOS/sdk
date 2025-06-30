@@ -17,14 +17,17 @@ import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.SttClient
 import com.penumbraos.sdk.api.TouchpadClient
 import com.penumbraos.sdk.api.WebSocketClient
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeout
 
 const val TAG = "PenumbraClient"
 
 class PenumbraClient {
     private var service: IBridge? = null
     private var context: Context
-    var serviceReadyReceiver: BroadcastReceiver? = null
-    var bridgeReadyListener: (() -> Unit)? = null
+    private var serviceReadyReceiver: BroadcastReceiver? = null
+    private var bridgeReadyListeners: MutableList<() -> Unit> = mutableListOf()
+    private val bridgeReadySignal: CompletableDeferred<Unit> = CompletableDeferred()
 
     lateinit var http: HttpClient
     lateinit var websocket: WebSocketClient
@@ -52,7 +55,7 @@ class PenumbraClient {
     ) : this(
         context, allowInitFailure
     ) {
-        this.bridgeReadyListener = bridgeReadyListener
+        this.bridgeReadyListeners.add(bridgeReadyListener)
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -64,10 +67,17 @@ class PenumbraClient {
 
                     try {
                         initialize()
-                        bridgeReadyListener?.invoke()
+                        for (listener in bridgeReadyListeners) {
+                            try {
+                                listener.invoke()
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Failed to invoke bridge ready listener", e)
+                            }
+                        }
                     } catch (e: Exception) {
                         // Ignore
                     }
+                    bridgeReadySignal.complete(Unit)
                 }
             }
         }
@@ -99,6 +109,12 @@ class PenumbraClient {
             stt.provider = sttProvider
         } catch (e: Exception) {
             throw Exception("Failed to connect to service bridge", e)
+        }
+    }
+
+    suspend fun waitForBridge() {
+        withTimeout(5000) {
+            bridgeReadySignal.await()
         }
     }
 

@@ -81,21 +81,20 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         try {
-            client = PenumbraClient(applicationContext, {
-                Log.w("MainActivity", "Sending deferred request")
-                Thread.sleep(20000)
-                client.touchpad.register(object : TouchpadInputReceiver {
-                    override fun onInputEvent(event: InputEvent) {
-                        Log.w("MainActivity", "Touchpad event: $event")
-                    }
-                })
-                makeRequest()
-            }, true)
+            client = PenumbraClient(applicationContext, true)
+        } catch (e: SecurityException) {
+//                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."
+            Log.e("MainActivity", "SecurityException binding to service", e)
+        } catch (e: Exception) {
+//                serviceConnectionStatus = "Exception binding to service: ${e.message}"
+            Log.e("MainActivity", "General Exception binding to service", e)
+        }
 
+        CoroutineScope(Dispatchers.IO).launch {
+            client.waitForBridge()
             // Hack to start STT service in advance of usage
             client.stt.launchListenerProcess(applicationContext)
 
-            Log.w("MainActivity", "Pinging $client")
             client.touchpad.register(object : TouchpadInputReceiver {
                 override fun onInputEvent(event: InputEvent) {
                     Log.w("MainActivity", "Touchpad event: $event")
@@ -120,12 +119,6 @@ class MainActivity : ComponentActivity() {
 
             client.stt.startListening()
             makeRequest()
-        } catch (e: SecurityException) {
-//                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."
-            Log.e("MainActivity", "SecurityException binding to service", e)
-        } catch (e: Exception) {
-//                serviceConnectionStatus = "Exception binding to service: ${e.message}"
-            Log.e("MainActivity", "General Exception binding to service", e)
         }
     }
 //    }
@@ -133,7 +126,7 @@ class MainActivity : ComponentActivity() {
     fun makeRequest() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = client!!.http.request("https://example.com", HttpMethod.GET)
+                val response = client.http.request("https://example.com", HttpMethod.GET)
                 Log.w("MainActivity", "Response: $response")
             } catch (e: Exception) {
                 Log.e("MainActivity", "General Exception", e)
