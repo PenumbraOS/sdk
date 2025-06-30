@@ -10,8 +10,5 @@ interface IBridge {
     IBinder getWebSocketProvider();
     IBinder getTouchpadProvider();
     IBinder getSttProvider();
-    void registerHttpProvider(IHttpProvider provider);
-    void registerWebSocketProvider(IWebSocketProvider provider);
-    void registerTouchpadProvider(ITouchpadProvider provider);
-    void registerSttProvider(ISttProvider provider);
+    void registerSystemService(IHttpProvider httpProvider, IWebSocketProvider webSocketProvider, ITouchpadProvider touchpadProvider, ISttProvider sttProvider);
 }

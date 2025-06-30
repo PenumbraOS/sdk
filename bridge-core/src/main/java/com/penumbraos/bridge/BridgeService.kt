@@ -1,7 +1,9 @@
 package com.penumbraos.bridge
 
+import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 
 class BridgeService {
 
@@ -27,24 +29,20 @@ class BridgeService {
             return this@BridgeService.sttProvider?.asBinder()
         }
 
-        override fun registerHttpProvider(provider: IHttpProvider) {
-            Log.d(TAG, "Registering HTTP provider")
-            this@BridgeService.httpProvider = provider
-        }
+        override fun registerSystemService(
+            httpProvider: IHttpProvider?,
+            webSocketProvider: IWebSocketProvider?,
+            touchpadProvider: ITouchpadProvider?,
+            sttProvider: ISttProvider?
+        ) {
+            Log.d(TAG, "Registering system bridge services")
+            this@BridgeService.httpProvider = httpProvider
+            this@BridgeService.webSocketProvider = webSocketProvider
+            this@BridgeService.touchpadProvider = touchpadProvider
+            this@BridgeService.sttProvider = sttProvider
 
-        override fun registerWebSocketProvider(provider: IWebSocketProvider) {
-            Log.d(TAG, "Registering WebSocket provider")
-            this@BridgeService.webSocketProvider = provider
-        }
-
-        override fun registerTouchpadProvider(provider: ITouchpadProvider?) {
-            Log.d(TAG, "Registering Touchpad provider")
-            this@BridgeService.touchpadProvider = provider
-        }
-
-        override fun registerSttProvider(provider: ISttProvider?) {
-            Log.d(TAG, "Registering STT provider")
-            this@BridgeService.sttProvider = provider
+            Log.d(TAG, "Broadcasting bridge ready")
+            sendBroadcast(Intent(BRIDGE_SERVICE_READY))
         }
     }
 

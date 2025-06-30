@@ -19,7 +19,7 @@ class Entrypoint {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            Log.w(TAG, "Starting bridge")
+            Log.i(TAG, "Starting bridge")
             val classLoader = ClassLoader.getSystemClassLoader()
             val thread = Common.initialize(ClassLoader.getSystemClassLoader())
             val context =
@@ -30,26 +30,28 @@ class Entrypoint {
             Runtime.getRuntime().addShutdownHook(Thread {
                 Log.w(TAG, "Shutting down bridge")
                 looper.quitSafely()
-                Log.w("SDKBridge", "Terminating")
+                Log.w(TAG, "Terminating")
             })
 
             try {
                 val bridge = IBridge.Stub.asInterface(ServiceManager.getService("nfc"))
-                Log.w(TAG, "Received bridge $bridge")
-                bridge.registerHttpProvider(HttpProvider())
-                bridge.registerWebSocketProvider(WebSocketProvider())
-                bridge.registerTouchpadProvider(TouchpadProvider(looper))
-                bridge.registerSttProvider(SttProvider(context, looper))
-                Log.w(TAG, "Registered system bridge")
+                Log.d(TAG, "Received bridge $bridge")
+                bridge.registerSystemService(
+                    HttpProvider(),
+                    WebSocketProvider(),
+                    TouchpadProvider(looper),
+                    SttProvider(context, looper)
+                )
+                Log.d(TAG, "Registered system bridge")
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting bridge", e)
                 looper.quit()
                 return
             }
 
-            Log.w(TAG, "Bridge started")
+            Log.i(TAG, "Bridge started")
             Looper.loop()
-            Log.w(TAG, "Bridge quit")
+            Log.i(TAG, "Bridge quit")
         }
     }
 }
