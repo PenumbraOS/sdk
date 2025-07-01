@@ -14,7 +14,7 @@ mockk = "1.13.10"
 coroutines = "1.8.1"
 robolectric = "4.14"
 okhttp = "4.12.0"
-systemJars = "1.0.2"
+systemJars = "70382bc"
 appprocessmocks = "1.0.1"
 
 [libraries]
