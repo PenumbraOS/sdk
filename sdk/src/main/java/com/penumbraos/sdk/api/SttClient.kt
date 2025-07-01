@@ -7,11 +7,9 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import com.penumbraos.bridge.ISttProvider
-import com.penumbraos.bridge.ISttRecognitionListener
 import com.penumbraos.sdk.api.types.SttRecognitionListener
 
 class SttClient {
-    private var recognitionListener: ISttRecognitionListener? = null
     lateinit var provider: ISttProvider
 
     /**
@@ -41,29 +39,20 @@ class SttClient {
         }
     }
 
-    fun setRecognitionListener(listener: SttRecognitionListener) {
-        this.recognitionListener = listener
+    fun initialize(listener: SttRecognitionListener) {
+        provider.initialize(listener)
     }
 
     fun startListening() {
-        if (recognitionListener == null) {
-            throw IllegalStateException("Recognition listener not set")
-        }
-        provider.startListening(recognitionListener)
+        provider.startListening()
     }
 
     fun stopListening() {
-        if (recognitionListener == null) {
-            throw IllegalStateException("Recognition listener not set")
-        }
-        provider.stopListening(recognitionListener)
+        provider.stopListening()
     }
 
     fun cancel() {
-        if (recognitionListener == null) {
-            throw IllegalStateException("Recognition listener not set")
-        }
-        provider.cancel(recognitionListener)
+        provider.cancel()
     }
 
     fun isRecognitionAvailable(): Boolean {
@@ -71,6 +60,6 @@ class SttClient {
     }
 
     fun destroy() {
-        recognitionListener = null
+        cancel()
     }
 }

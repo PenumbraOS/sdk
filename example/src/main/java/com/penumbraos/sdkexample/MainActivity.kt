@@ -100,7 +100,7 @@ class MainActivity : ComponentActivity() {
                     Log.w("MainActivity", "Touchpad event: $event")
                 }
             })
-            client.stt.setRecognitionListener(object : SttRecognitionListener() {
+            client.stt.initialize(object : SttRecognitionListener() {
                 override fun onError(error: Int) {
                     Log.w("MainActivity", "STT Error: $error")
                 }

@@ -70,13 +70,15 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
         currentListener = null
     }
 
-    override fun startListening(callback: ISttRecognitionListener?) {
+    override fun initialize(callback: ISttRecognitionListener?) {
         if (callback == null) {
-            Log.e(TAG, "startListening called with null callback")
-            return
+            throw IllegalArgumentException("callback cannot be null")
         }
+        Log.i(TAG, "Initializing STT")
         currentListener = callback
+    }
 
+    override fun startListening() {
         mainThreadHandler.post {
             if (speechRecognizer == null) {
                 // Context needs attributionSource
@@ -100,28 +102,13 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
         }
     }
 
-    override fun stopListening(callback: ISttRecognitionListener?) {
-        if (callback != currentListener) {
-            Log.w(
-                TAG,
-                "stopListening called with a different listener than currently active."
-            )
-            return
-        }
-
+    override fun stopListening() {
         mainThreadHandler.post {
             speechRecognizer?.stopListening()
         }
     }
 
-    override fun cancel(callback: ISttRecognitionListener?) {
-        if (callback != currentListener) {
-            Log.w(
-                TAG,
-                "cancel called with a different listener than currently active."
-            )
-            return
-        }
+    override fun cancel() {
         speechRecognizer?.cancel()
         destroySpeechRecognizer()
     }
