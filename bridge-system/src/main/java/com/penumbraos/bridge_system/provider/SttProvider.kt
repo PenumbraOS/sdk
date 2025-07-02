@@ -52,7 +52,6 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
 
         override fun onResults(results: Bundle?) {
             currentListener?.onResults(results)
-            destroySpeechRecognizer()
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
@@ -60,7 +59,7 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
         }
 
         override fun onEvent(eventType: Int, params: Bundle?) {
-            currentListener?.onEvent(eventType, params)
+            // Stub
         }
     }
 
@@ -74,37 +73,50 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
         if (callback == null) {
             throw IllegalArgumentException("callback cannot be null")
         }
+
         Log.i(TAG, "Initializing STT")
         currentListener = callback
     }
 
     override fun startListening() {
+        if (currentListener == null) {
+            throw IllegalStateException("STT not initialized with listener callback")
+        }
+
+        Log.i(TAG, "Start listening")
         mainThreadHandler.post {
-            if (speechRecognizer == null) {
-                // Context needs attributionSource
-                speechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
-                speechRecognizer?.setRecognitionListener(recognitionListener)
-            }
+            try {
+                if (speechRecognizer == null) {
+                    Log.i(TAG, "Initializing speech recognizer")
+                    // Context needs attributionSource
+                    speechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
+                    speechRecognizer?.setRecognitionListener(recognitionListener)
+                }
 
-            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                putExtra(
-                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                )
-                putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
-            }
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(
+                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                    )
+                    putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, context.packageName)
+                }
 
-            Log.w(
-                TAG,
-                "My: ${Looper.myLooper()}, main: ${Looper.getMainLooper()}"
-            )
-            speechRecognizer?.startListening(intent)
+                Log.i(TAG, "Starting speech recognition")
+                speechRecognizer?.startListening(intent)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error starting speech recognition", e)
+            }
         }
     }
 
     override fun stopListening() {
+        Log.i(TAG, "Stop listening")
         mainThreadHandler.post {
-            speechRecognizer?.stopListening()
+            try {
+                speechRecognizer?.stopListening()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error stopping speech recognition", e)
+            }
         }
     }
 

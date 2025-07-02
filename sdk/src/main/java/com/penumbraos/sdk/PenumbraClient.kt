@@ -112,8 +112,12 @@ class PenumbraClient {
         }
     }
 
-    suspend fun waitForBridge() {
-        withTimeout(5000) {
+    suspend fun waitForBridge(timeout: Long? = null) {
+        if (timeout != null) {
+            withTimeout(5000) {
+                bridgeReadySignal.await()
+            }
+        } else {
             bridgeReadySignal.await()
         }
     }

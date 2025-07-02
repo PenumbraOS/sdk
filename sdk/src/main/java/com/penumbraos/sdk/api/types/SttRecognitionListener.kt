@@ -12,5 +12,4 @@ abstract class SttRecognitionListener : ISttRecognitionListener.Stub() {
     override fun onError(error: Int) {}
     override fun onResults(results: Bundle?) {}
     override fun onPartialResults(partialResults: Bundle?) {}
-    override fun onEvent(eventType: Int, params: Bundle?) {}
 }

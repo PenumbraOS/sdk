@@ -9,5 +9,4 @@ interface ISttRecognitionListener {
     void onError(int error);
     void onResults(in Bundle results);
     void onPartialResults(in Bundle partialResults);
-    void onEvent(int eventType, in Bundle params);
 }
