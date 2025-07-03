@@ -11,6 +11,8 @@ import okhttp3.WebSocketListener
 import okio.ByteString
 import java.util.concurrent.ConcurrentHashMap
 
+private const val TAG = "WebSocketProvider"
+
 class WebSocketProvider : IWebSocketProvider.Stub() {
 
     private val client = OkHttpClient()
@@ -31,16 +33,22 @@ class WebSocketProvider : IWebSocketProvider.Stub() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 val responseHeaders =
                     response.headers.toMultimap().mapValues { it.value.joinToString() }
-                callback.onOpen(requestId, responseHeaders)
+                safeCallback(TAG) {
+                    callback.onOpen(requestId, responseHeaders)
+                }
                 webSockets[requestId] = webSocket
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                callback.onMessage(requestId, 1, text.toByteArray())
+                safeCallback(TAG) {
+                    callback.onMessage(requestId, 1, text.toByteArray())
+                }
             }
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                callback.onMessage(requestId, 2, bytes.toByteArray())
+                safeCallback(TAG) {
+                    callback.onMessage(requestId, 2, bytes.toByteArray())
+                }
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
@@ -48,12 +56,16 @@ class WebSocketProvider : IWebSocketProvider.Stub() {
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                callback.onClose(requestId)
+                safeCallback(TAG) {
+                    callback.onClose(requestId)
+                }
                 webSockets.remove(requestId)
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                callback.onError(requestId, t.message ?: "Unknown error")
+                safeCallback(TAG) {
+                    callback.onError(requestId, t.message ?: "Unknown error")
+                }
                 webSockets.remove(requestId)
             }
         })

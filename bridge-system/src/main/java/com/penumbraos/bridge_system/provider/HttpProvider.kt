@@ -10,6 +10,8 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
 
+private const val TAG = "HttpProvider"
+
 class HttpProvider : IHttpProvider.Stub() {
 
     private val client = OkHttpClient()
@@ -33,13 +35,18 @@ class HttpProvider : IHttpProvider.Stub() {
 
         client.newCall(requestBuilder.build()).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                callback.onError(requestId, e.message ?: "Unknown error", -1)
+                safeCallback(TAG) {
+                    callback.onError(requestId, e.message ?: "Unknown error", -1)
+                }
             }
 
             override fun onResponse(call: Call, response: Response) {
                 val responseHeaders =
                     response.headers.toMultimap().mapValues { it.value.joinToString() }
-                callback.onHeaders(requestId, response.code, responseHeaders)
+                
+                if (!safeCallback(TAG) { callback.onHeaders(requestId, response.code, responseHeaders) }) {
+                    return
+                }
 
                 val responseBody = response.body
                 if (responseBody != null) {
@@ -47,10 +54,14 @@ class HttpProvider : IHttpProvider.Stub() {
                     val inputStream = responseBody.byteStream()
                     var bytesRead = 0
                     while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        callback.onData(requestId, buffer.copyOf(bytesRead))
+                        if (!safeCallback(TAG) { callback.onData(requestId, buffer.copyOf(bytesRead)) }) {
+                            return
+                        }
                     }
                 }
-                callback.onComplete(requestId)
+                safeCallback(TAG) {
+                    callback.onComplete(requestId)
+                }
             }
         })
     }
