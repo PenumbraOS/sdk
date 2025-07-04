@@ -11,6 +11,7 @@ class BridgeService {
     private var webSocketProvider: IWebSocketProvider? = null
     private var touchpadProvider: ITouchpadProvider? = null
     private var sttProvider: ISttProvider? = null
+    private var ledProvider: ILedProvider? = null
 
     private val binder = object : IBridge.Stub() {
         override fun getHttpProvider(): IBinder? {
@@ -29,17 +30,23 @@ class BridgeService {
             return this@BridgeService.sttProvider?.asBinder()
         }
 
+        override fun getLedProvider(): IBinder? {
+            return this@BridgeService.ledProvider?.asBinder()
+        }
+
         override fun registerSystemService(
             httpProvider: IHttpProvider?,
             webSocketProvider: IWebSocketProvider?,
             touchpadProvider: ITouchpadProvider?,
-            sttProvider: ISttProvider?
+            sttProvider: ISttProvider?,
+            ledProvider: ILedProvider?
         ) {
             Log.d(TAG, "Registering system bridge services")
             this@BridgeService.httpProvider = httpProvider
             this@BridgeService.webSocketProvider = webSocketProvider
             this@BridgeService.touchpadProvider = touchpadProvider
             this@BridgeService.sttProvider = sttProvider
+            this@BridgeService.ledProvider = ledProvider
 
             Log.d(TAG, "Broadcasting bridge ready")
             sendBroadcast(Intent(BRIDGE_SERVICE_READY))

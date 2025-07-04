@@ -8,6 +8,7 @@ import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.bridge.IBridge
 import com.penumbraos.bridge_system.provider.HttpProvider
+import com.penumbraos.bridge_system.provider.LedProvider
 import com.penumbraos.bridge_system.provider.SttProvider
 import com.penumbraos.bridge_system.provider.TouchpadProvider
 import com.penumbraos.bridge_system.provider.WebSocketProvider
@@ -40,7 +41,8 @@ class Entrypoint {
                     HttpProvider(),
                     WebSocketProvider(),
                     TouchpadProvider(looper),
-                    SttProvider(context, looper)
+                    SttProvider(context, looper),
+                    LedProvider(context)
                 )
                 Log.d(TAG, "Registered system bridge")
             } catch (e: Exception) {

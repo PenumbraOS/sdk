@@ -1,15 +1,15 @@
 package com.penumbraos.sdkexample
 
 import android.os.Bundle
-import android.speech.SpeechRecognizer
 import android.util.Log
 import android.view.InputEvent
+import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.penumbraos.sdk.PenumbraClient
 import com.penumbraos.sdk.api.HttpMethod
-import com.penumbraos.sdk.api.types.SttRecognitionListener
+import com.penumbraos.sdk.api.types.LedAnimation
 import com.penumbraos.sdk.api.types.TouchpadInputReceiver
 import com.penumbraos.sdkexample.ui.theme.SDKExampleTheme
 import kotlinx.coroutines.CoroutineScope
@@ -93,32 +93,49 @@ class MainActivity : ComponentActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             client.waitForBridge()
             // Hack to start STT service in advance of usage
-            client.stt.launchListenerProcess(applicationContext)
+//            client.stt.launchListenerProcess(applicationContext)
+
+            var currentIndex = 31
 
             client.touchpad.register(object : TouchpadInputReceiver {
                 override fun onInputEvent(event: InputEvent) {
-                    Log.w("MainActivity", "Touchpad event: $event")
+                    val event = event as MotionEvent
+                    if (event.action == MotionEvent.ACTION_UP && event.eventTime - event.downTime < 200) {
+//                        client.led.clearAllAnimation()
+                        currentIndex += 1
+                        if (currentIndex > 31) {
+                            currentIndex = 0
+                        }
+
+                        val animation = LedAnimation.fromValue(currentIndex)
+                        if (animation != null) {
+                            client.led.playAnimation(animation)
+                            Log.w("MainActivity", "LED Animation: $currentIndex")
+                        } else {
+                            Log.w("MainActivity", "LED Animation: Skipping $currentIndex")
+                        }
+                    }
                 }
             })
-            client.stt.initialize(object : SttRecognitionListener() {
-                override fun onError(error: Int) {
-                    Log.w("MainActivity", "STT Error: $error")
-                }
-
-                override fun onResults(results: Bundle?) {
-                    val lines = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    Log.w("MainActivity", "STT Results: $lines")
-                }
-
-                override fun onPartialResults(partialResults: Bundle?) {
-                    val lines =
-                        partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                    Log.w("MainActivity", "STT Partial Results: $lines")
-                }
-            })
-
-            client.stt.startListening()
-            makeRequest()
+//            client.stt.initialize(object : SttRecognitionListener() {
+//                override fun onError(error: Int) {
+//                    Log.w("MainActivity", "STT Error: $error")
+//                }
+//
+//                override fun onResults(results: Bundle?) {
+//                    val lines = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+//                    Log.w("MainActivity", "STT Results: $lines")
+//                }
+//
+//                override fun onPartialResults(partialResults: Bundle?) {
+//                    val lines =
+//                        partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+//                    Log.w("MainActivity", "STT Partial Results: $lines")
+//                }
+//            })
+//
+//            client.stt.startListening()
+//            makeRequest()
         }
     }
 //    }

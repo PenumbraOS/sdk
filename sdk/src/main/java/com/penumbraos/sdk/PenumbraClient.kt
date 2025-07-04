@@ -9,11 +9,13 @@ import android.os.IBinder
 import android.util.Log
 import com.penumbraos.bridge.IBridge
 import com.penumbraos.bridge.IHttpProvider
+import com.penumbraos.bridge.ILedProvider
 import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.HttpClient
+import com.penumbraos.sdk.api.LedClient
 import com.penumbraos.sdk.api.SttClient
 import com.penumbraos.sdk.api.TouchpadClient
 import com.penumbraos.sdk.api.WebSocketClient
@@ -33,6 +35,8 @@ class PenumbraClient {
     lateinit var websocket: WebSocketClient
     lateinit var touchpad: TouchpadClient
     val stt: SttClient = SttClient()
+
+    lateinit var led: LedClient
 
     constructor(context: Context, allowInitFailure: Boolean = false) {
         this.context = context
@@ -103,10 +107,14 @@ class PenumbraClient {
                 ITouchpadProvider.Stub.asInterface(service!!.getTouchpadProvider())
             val sttProvider = ISttProvider.Stub.asInterface(service!!.getSttProvider())
 
+            val ledProvider = ILedProvider.Stub.asInterface(service!!.getLedProvider())
+
             http = HttpClient(httpProvider)
             websocket = WebSocketClient(webSocketProvider)
             touchpad = TouchpadClient(touchpadProvider)
             stt.provider = sttProvider
+
+            led = LedClient(ledProvider)
         } catch (e: Exception) {
             throw Exception("Failed to connect to service bridge", e)
         }
