@@ -14,6 +14,7 @@ mockk = "1.13.10"
 coroutines = "1.8.1"
 robolectric = "4.14"
 okhttp = "4.12.0"
+ktor = "3.0.0"
 systemJars = "70382bc"
 appprocessmocks = "1de5f75"
 
@@ -41,6 +42,9 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 androidx-core-testing = { group = "androidx.arch.core", name = "core-testing", version = "2.2.0" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version = "0.6.0" }
 appprocessmocks = { group = "com.github.PenumbraOS", name = "app_process-mocks", version.ref = "appprocessmocks" }
 
 [plugins]

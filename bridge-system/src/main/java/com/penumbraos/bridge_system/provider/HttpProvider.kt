@@ -1,5 +1,6 @@
 package com.penumbraos.bridge_system.provider
 
+import android.util.Log
 import com.penumbraos.bridge.IHttpCallback
 import com.penumbraos.bridge.IHttpProvider
 import okhttp3.Call
@@ -24,6 +25,7 @@ class HttpProvider : IHttpProvider.Stub() {
         headers: Map<*, *>,
         callback: IHttpCallback
     ) {
+        Log.w("HttpProvider", "Making HTTP request: $url")
         val requestBuilder = Request.Builder().url(url)
 
         headers.forEach { (key, value) ->
@@ -41,10 +43,17 @@ class HttpProvider : IHttpProvider.Stub() {
             }
 
             override fun onResponse(call: Call, response: Response) {
+                Log.w("HttpClient", "Received data")
                 val responseHeaders =
                     response.headers.toMultimap().mapValues { it.value.joinToString() }
-                
-                if (!safeCallback(TAG) { callback.onHeaders(requestId, response.code, responseHeaders) }) {
+
+                if (!safeCallback(TAG) {
+                        callback.onHeaders(
+                            requestId,
+                            response.code,
+                            responseHeaders
+                        )
+                    }) {
                     return
                 }
 
@@ -54,7 +63,12 @@ class HttpProvider : IHttpProvider.Stub() {
                     val inputStream = responseBody.byteStream()
                     var bytesRead = 0
                     while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        if (!safeCallback(TAG) { callback.onData(requestId, buffer.copyOf(bytesRead)) }) {
+                        if (!safeCallback(TAG) {
+                                callback.onData(
+                                    requestId,
+                                    buffer.copyOf(bytesRead)
+                                )
+                            }) {
                             return
                         }
                     }
