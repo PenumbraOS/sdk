@@ -14,5 +14,8 @@ inline fun safeCallback(tag: String, operation: () -> Unit): Boolean {
     } catch (e: RemoteException) {
         Log.w(tag, "RemoteException in callback", e)
         false
+    } catch (e: Exception) {
+        Log.e(tag, "Exception in callback", e)
+        false
     }
 }
