@@ -16,7 +16,7 @@ robolectric = "4.14"
 okhttp = "4.12.0"
 ktor = "3.0.0"
 systemJars = "70382bc"
-appprocessmocks = "1de5f75"
+appprocessmocks = "3b869f2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

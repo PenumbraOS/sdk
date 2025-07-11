@@ -3,6 +3,7 @@ package com.penumbraos.bridge
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import com.penumbraos.appprocessmocks.MockActivityManager
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 
 class BridgeService {
@@ -49,7 +50,7 @@ class BridgeService {
             this@BridgeService.ledProvider = ledProvider
 
             Log.d(TAG, "Broadcasting bridge ready")
-            sendBroadcast(Intent(BRIDGE_SERVICE_READY))
+            MockActivityManager.sendBroadcast(Intent(BRIDGE_SERVICE_READY))
         }
     }
 

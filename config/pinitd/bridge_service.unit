@@ -4,6 +4,7 @@
 [Service]
 Name=bridge-service
 Uid=1027
+Autostart=true
 ;If doing active debugging, use the follow script and uncomment the following line to manually run bridge:
 ;nc 127.0.0.1 1234
 ;/system/bin/app_process -cp $(pm path com.penumbraos.bridge | sed 's/^package://') /system/bin --application com.penumbraos.bridge.Entrypoint

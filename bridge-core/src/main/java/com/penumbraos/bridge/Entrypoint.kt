@@ -1,12 +1,15 @@
 package com.penumbraos.bridge
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.IBinder
 import android.os.Looper
 import android.os.ServiceManager
 import android.util.Log
+import com.penumbraos.appprocessmocks.MockActivityManager
+import com.penumbraos.bridge.external.BRIDGE_SERVICE_REGISTERED
 
-const val TAG = "BridgeService"
+const val TAG = "BridgeCoreService"
 
 @SuppressLint("DiscouragedPrivateApi", "PrivateApi")
 class Entrypoint {
@@ -29,6 +32,7 @@ class Entrypoint {
                 Log.w(TAG, "Registering bridge")
                 ServiceManager.addService("nfc", service)
                 Log.w(TAG, "Successfully registered service")
+                MockActivityManager.sendBroadcast(Intent(BRIDGE_SERVICE_REGISTERED))
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting bridge", e)
                 looper?.quit()
