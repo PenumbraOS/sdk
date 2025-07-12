@@ -23,55 +23,38 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
 
     private val recognitionListener = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {
-            if (!safeCallback(TAG) { currentListener?.onReadyForSpeech(params) }) {
-                currentListener = null
-            }
+            safeCallback(TAG) { currentListener?.onReadyForSpeech(params) }
         }
 
         override fun onBeginningOfSpeech() {
-            if (!safeCallback(TAG) { currentListener?.onBeginningOfSpeech() }) {
-                currentListener = null
-            }
+            safeCallback(TAG) { currentListener?.onBeginningOfSpeech() }
         }
 
         override fun onRmsChanged(rmsdB: Float) {
-            if (!safeCallback(TAG) { currentListener?.onRmsChanged(rmsdB) }) {
-                currentListener = null
-            }
+            safeCallback(TAG) { currentListener?.onRmsChanged(rmsdB) }
         }
 
         override fun onBufferReceived(buffer: ByteArray?) {
             if (buffer != null) {
-                if (!safeCallback(TAG) { currentListener?.onBufferReceived(buffer) }) {
-                    currentListener = null
-                }
+                safeCallback(TAG) { currentListener?.onBufferReceived(buffer) }
             }
         }
 
         override fun onEndOfSpeech() {
-            if (!safeCallback(TAG) { currentListener?.onEndOfSpeech() }) {
-                currentListener = null
-            }
+            safeCallback(TAG) { currentListener?.onEndOfSpeech() }
         }
 
         override fun onError(error: Int) {
             Log.e(TAG, "Speech recognition error: $error")
-            if (!safeCallback(TAG) { currentListener?.onError(error) }) {
-                currentListener = null
-            }
-            destroySpeechRecognizer()
+            safeCallback(TAG) { currentListener?.onError(error) }
         }
 
         override fun onResults(results: Bundle?) {
-            if (!safeCallback(TAG) { currentListener?.onResults(results) }) {
-                currentListener = null
-            }
+            safeCallback(TAG) { currentListener?.onResults(results) }
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
-            if (!safeCallback(TAG) { currentListener?.onPartialResults(partialResults) }) {
-                currentListener = null
-            }
+            safeCallback(TAG) { currentListener?.onPartialResults(partialResults) }
         }
 
         override fun onEvent(eventType: Int, params: Bundle?) {
