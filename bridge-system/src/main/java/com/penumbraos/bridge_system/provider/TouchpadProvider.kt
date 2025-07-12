@@ -1,9 +1,7 @@
 package com.penumbraos.bridge_system.provider
 
 import android.hardware.input.IInputManager
-import android.os.DeadObjectException
 import android.os.Looper
-import android.os.RemoteException
 import android.os.ServiceManager
 import android.util.Log
 import android.view.InputChannel
@@ -27,14 +25,8 @@ class TouchpadProvider(private val looper: Looper) :
             if (event != null) {
                 val deadCallbacks = mutableListOf<ITouchpadCallback>()
                 callbacks.forEach { callback ->
-                    try {
+                    safeCallback(TAG) {
                         callback.onInputEvent(event)
-                    } catch (e: DeadObjectException) {
-                        Log.w(TAG, "Dead callback detected", e)
-                        deadCallbacks.add(callback)
-                    } catch (e: RemoteException) {
-                        Log.w(TAG, "RemoteException calling callback", e)
-                        deadCallbacks.add(callback)
                     }
                 }
                 callbacks.removeAll(deadCallbacks)
