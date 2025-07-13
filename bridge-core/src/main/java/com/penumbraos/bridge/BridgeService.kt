@@ -13,6 +13,7 @@ class BridgeService {
     private var touchpadProvider: ITouchpadProvider? = null
     private var sttProvider: ISttProvider? = null
     private var ledProvider: ILedProvider? = null
+    private var settingsProvider: ISettingsProvider? = null
 
     private val binder = object : IBridge.Stub() {
         override fun getHttpProvider(): IBinder? {
@@ -35,6 +36,10 @@ class BridgeService {
             return this@BridgeService.ledProvider?.asBinder()
         }
 
+        override fun getSettingsProvider(): IBinder? {
+            return this@BridgeService.settingsProvider?.asBinder()
+        }
+
         override fun registerSystemService(
             httpProvider: IHttpProvider?,
             webSocketProvider: IWebSocketProvider?,
@@ -51,6 +56,11 @@ class BridgeService {
 
             Log.d(TAG, "Broadcasting bridge ready")
             MockActivityManager.sendBroadcast(Intent(BRIDGE_SERVICE_READY))
+        }
+
+        override fun registerSettingsService(settingsProvider: ISettingsProvider?) {
+            Log.d(TAG, "Registering settings service")
+            this@BridgeService.settingsProvider = settingsProvider
         }
     }
 

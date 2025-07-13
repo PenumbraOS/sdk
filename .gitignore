@@ -10,6 +10,8 @@
 .DS_Store
 **/build
 **/target
+**/node_modules
+**/dist
 /captures
 .externalNativeBuild
 .cxx

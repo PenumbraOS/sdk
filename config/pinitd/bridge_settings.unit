@@ -1,0 +1,5 @@
+[Service]
+Name=bridge-settings-service
+Uid=1000
+Autostart=true
+ExecJvmClass=com.penumbraos.bridge_settings/com.penumbraos.bridge_settings.Entrypoint

@@ -10,12 +10,14 @@ import android.util.Log
 import com.penumbraos.bridge.IBridge
 import com.penumbraos.bridge.IHttpProvider
 import com.penumbraos.bridge.ILedProvider
+import com.penumbraos.bridge.ISettingsProvider
 import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.LedClient
+import com.penumbraos.sdk.api.SettingsClient
 import com.penumbraos.sdk.api.SttClient
 import com.penumbraos.sdk.api.TouchpadClient
 import com.penumbraos.sdk.api.WebSocketClient
@@ -33,10 +35,12 @@ class PenumbraClient {
 
     lateinit var http: HttpClient
     lateinit var websocket: WebSocketClient
-    lateinit var touchpad: TouchpadClient
     val stt: SttClient = SttClient()
 
+    lateinit var touchpad: TouchpadClient
     lateinit var led: LedClient
+
+    lateinit var settings: SettingsClient
 
     constructor(context: Context, allowInitFailure: Boolean = false) {
         this.context = context
@@ -103,18 +107,23 @@ class PenumbraClient {
             val httpProvider = IHttpProvider.Stub.asInterface(service!!.getHttpProvider())
             val webSocketProvider =
                 IWebSocketProvider.Stub.asInterface(service!!.getWebSocketProvider())
-            val touchpadProvider =
-                ITouchpadProvider.Stub.asInterface(service!!.getTouchpadProvider())
             val sttProvider = ISttProvider.Stub.asInterface(service!!.getSttProvider())
 
+            val touchpadProvider =
+                ITouchpadProvider.Stub.asInterface(service!!.getTouchpadProvider())
             val ledProvider = ILedProvider.Stub.asInterface(service!!.getLedProvider())
+
+            val settingsProvider =
+                ISettingsProvider.Stub.asInterface(service!!.getSettingsProvider())
 
             http = HttpClient(httpProvider)
             websocket = WebSocketClient(webSocketProvider)
-            touchpad = TouchpadClient(touchpadProvider)
             stt.provider = sttProvider
 
+            touchpad = TouchpadClient(touchpadProvider)
             led = LedClient(ledProvider)
+            
+            settings = SettingsClient(settingsProvider)
         } catch (e: Exception) {
             throw Exception("Failed to connect to service bridge", e)
         }

@@ -1,0 +1,3 @@
+# This directory will contain the built React app files
+# Run: cd react-app && npm run build:android
+# This will create a react-build/ subdirectory here
