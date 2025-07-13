@@ -118,7 +118,7 @@ export class WebSocketService {
     }
   }
 
-  updateSetting(category: string, key: string, value: string): void {
+  updateSetting(category: string, key: string, value: unknown): void {
     this.send({
       type: "updateSetting",
       category,

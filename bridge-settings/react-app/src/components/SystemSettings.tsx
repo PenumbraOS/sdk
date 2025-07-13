@@ -8,11 +8,11 @@ const SystemSettings: React.FC = () => {
   const systemSettings = getSystemSettings();
 
   const handleToggle = (key: string, enabled: boolean) => {
-    updateSystemSetting(key, enabled.toString());
+    updateSystemSetting(key, enabled);
   };
 
   const handleSlider = (key: string, value: number) => {
-    updateSystemSetting(key, value.toString());
+    updateSystemSetting(key, value);
   };
 
   return (
@@ -23,13 +23,13 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Display Brightness</span>
         <div className="setting-control">
           <Slider
-            value={parseInt(systemSettings['display.brightness'] || '50')}
+            value={Number(systemSettings['display.brightness']) || 50}
             min={0}
             max={100}
             onChange={(value) => handleSlider('display.brightness', value)}
           />
           <span className="status-display">
-            {systemSettings['display.brightness'] || '50'}%
+            {Number(systemSettings['display.brightness']) || 50}%
           </span>
         </div>
       </div>
@@ -38,7 +38,7 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Auto Brightness</span>
         <div className="setting-control">
           <ToggleSwitch
-            enabled={systemSettings['display.auto_brightness'] === 'true'}
+            enabled={Boolean(systemSettings['display.auto_brightness'])}
             onChange={(enabled) => handleToggle('display.auto_brightness', enabled)}
           />
         </div>
@@ -48,13 +48,13 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Audio Volume</span>
         <div className="setting-control">
           <Slider
-            value={parseInt(systemSettings['audio.volume'] || '70')}
+            value={Number(systemSettings['audio.volume']) || 70}
             min={0}
             max={100}
             onChange={(value) => handleSlider('audio.volume', value)}
           />
           <span className="status-display">
-            {systemSettings['audio.volume'] || '70'}%
+            {Number(systemSettings['audio.volume']) || 70}%
           </span>
         </div>
       </div>
@@ -63,7 +63,7 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Muted</span>
         <div className="setting-control">
           <ToggleSwitch
-            enabled={systemSettings['audio.muted'] === 'true'}
+            enabled={Boolean(systemSettings['audio.muted'])}
             onChange={(enabled) => handleToggle('audio.muted', enabled)}
           />
         </div>
@@ -73,7 +73,7 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">WiFi Enabled</span>
         <div className="setting-control">
           <ToggleSwitch
-            enabled={systemSettings['network.wifi_enabled'] === 'true'}
+            enabled={Boolean(systemSettings['network.wifi_enabled'])}
             onChange={(enabled) => handleToggle('network.wifi_enabled', enabled)}
           />
         </div>
@@ -83,7 +83,7 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Power Save Mode</span>
         <div className="setting-control">
           <ToggleSwitch
-            enabled={systemSettings['battery.power_save_mode'] === 'true'}
+            enabled={Boolean(systemSettings['battery.power_save_mode'])}
             onChange={(enabled) => handleToggle('battery.power_save_mode', enabled)}
           />
         </div>

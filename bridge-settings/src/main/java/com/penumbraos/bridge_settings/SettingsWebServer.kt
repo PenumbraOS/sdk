@@ -34,8 +34,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
@@ -47,7 +49,7 @@ private const val TAG = "SettingsWebServer"
 sealed class SettingsMessage {
     @Serializable
     @SerialName("updateSetting")
-    data class UpdateSetting(val category: String, val key: String, val value: String) :
+    data class UpdateSetting(val category: String, val key: String, val value: JsonElement) :
         SettingsMessage()
 
     @Serializable
@@ -104,8 +106,26 @@ class SettingsWebServer(
             }
         }
 
-        server?.start(wait = true)
-        Log.i(TAG, "Settings web server started successfully at http://$host:$port")
+        try {
+            server?.start(wait = false)
+
+            // Verify the server actually started by checking if it's running
+            val startTime = System.currentTimeMillis()
+            val timeout = 5000 // 5 seconds
+
+            while (server?.engine?.resolvedConnectors()?.isEmpty() != false && (System.currentTimeMillis() - startTime) < timeout) {
+                Thread.sleep(100)
+            }
+
+            if (server?.engine?.resolvedConnectors()?.isEmpty() != false) {
+                throw RuntimeException("Server failed to start within timeout period")
+            }
+
+            Log.i(TAG, "Settings web server started successfully at http://$host:$port")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start web server on port $port", e)
+            throw RuntimeException("Failed to bind to port $port: ${e.message}", e)
+        }
     }
 
     fun stop() {
@@ -307,8 +327,12 @@ class SettingsWebServer(
             }
 
             is SettingsMessage.UpdateSetting -> {
+                val convertedValue = message.value.jsonPrimitive.let { primitive ->
+                    primitive.booleanOrNull ?: primitive.intOrNull ?: primitive.doubleOrNull
+                    ?: primitive.content
+                }
                 val success = if (message.category == "system") {
-                    settingsRegistry.updateSystemSetting(message.key, message.value)
+                    settingsRegistry.updateSystemSetting(message.key, convertedValue)
                 } else {
                     // For app settings, we'd need to parse the category to get appId
                     // This is simplified - in a real implementation, the message format would include appId

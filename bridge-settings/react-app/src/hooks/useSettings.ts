@@ -3,7 +3,7 @@ import { useWebSocketMessages, useWebSocket } from './useWebSocket';
 import { SystemStatus } from '../types/settings';
 
 export function useSettings() {
-  const [allSettings, setAllSettings] = useState<Record<string, Record<string, string>>>({});
+  const [allSettings, setAllSettings] = useState<Record<string, Record<string, unknown>>>({});
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,32 +35,32 @@ export function useSettings() {
           setSystemStatus(prev => ({
             ...prev,
             battery: {
-              level: parseInt(lastMessage.data.level || '0'),
-              charging: lastMessage.data.charging === 'true',
-              powerSaveMode: lastMessage.data.powerSaveMode === 'true'
+              level: Number(lastMessage.data.level) || 0,
+              charging: Boolean(lastMessage.data.charging),
+              powerSaveMode: Boolean(lastMessage.data.powerSaveMode)
             }
           }));
         } else if (lastMessage.statusType === 'display') {
           setSystemStatus(prev => ({
             ...prev,
             display: {
-              brightness: parseInt(lastMessage.data.brightness || '50'),
-              autoBrightness: lastMessage.data.autoBrightness === 'true'
+              brightness: Number(lastMessage.data.brightness) || 50,
+              autoBrightness: Boolean(lastMessage.data.autoBrightness)
             }
           }));
         } else if (lastMessage.statusType === 'audio') {
           setSystemStatus(prev => ({
             ...prev,
             audio: {
-              volume: parseInt(lastMessage.data.volume || '50'),
-              muted: lastMessage.data.muted === 'true'
+              volume: Number(lastMessage.data.volume) || 50,
+              muted: Boolean(lastMessage.data.muted)
             }
           }));
         } else if (lastMessage.statusType === 'network') {
           setSystemStatus(prev => ({
             ...prev,
             network: {
-              wifiEnabled: lastMessage.data.wifiEnabled === 'true'
+              wifiEnabled: Boolean(lastMessage.data.wifiEnabled)
             }
           }));
         }
@@ -72,11 +72,11 @@ export function useSettings() {
     }
   }, [lastMessage]);
 
-  const updateSystemSetting = (key: string, value: string) => {
+  const updateSystemSetting = (key: string, value: unknown) => {
     updateSetting('system', key, value);
   };
 
-  const updateAppSetting = (appId: string, category: string, key: string, value: string) => {
+  const updateAppSetting = (appId: string, category: string, key: string, value: unknown) => {
     updateSetting(`${appId}.${category}`, key, value);
   };
 
@@ -91,7 +91,7 @@ export function useSettings() {
         const category = key.substring(appId.length + 1);
         acc[category] = value;
         return acc;
-      }, {} as Record<string, Record<string, string>>);
+      }, {} as Record<string, Record<string, unknown>>);
   };
 
   return {

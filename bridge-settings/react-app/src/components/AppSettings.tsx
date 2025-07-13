@@ -22,7 +22,7 @@ const AppSettings: React.FC = () => {
     );
   }
 
-  const handleAppSettingChange = (fullKey: string, settingKey: string, value: string) => {
+  const handleAppSettingChange = (fullKey: string, settingKey: string, value: unknown) => {
     // Parse the full key to get appId and category
     const parts = fullKey.split('.');
     if (parts.length >= 2) {
@@ -32,36 +32,35 @@ const AppSettings: React.FC = () => {
     }
   };
 
-  const renderSettingControl = (fullKey: string, settingKey: string, value: string) => {
+  const renderSettingControl = (fullKey: string, settingKey: string, value: unknown) => {
     // Try to determine the setting type from the value
-    if (value === 'true' || value === 'false') {
+    if (typeof value === 'boolean') {
       // Boolean setting
       return (
         <ToggleSwitch
-          enabled={value === 'true'}
-          onChange={(enabled) => handleAppSettingChange(fullKey, settingKey, enabled.toString())}
+          enabled={value}
+          onChange={(enabled) => handleAppSettingChange(fullKey, settingKey, enabled)}
         />
       );
-    } else if (!isNaN(Number(value))) {
+    } else if (typeof value === 'number') {
       // Numeric setting - treat as slider with reasonable defaults
-      const numValue = parseInt(value);
-      const max = Math.max(100, numValue * 2); // Reasonable max
+      const max = Math.max(100, value * 2); // Reasonable max
       return (
         <div className="setting-control">
           <Slider
-            value={numValue}
+            value={value}
             min={0}
             max={max}
-            onChange={(newValue) => handleAppSettingChange(fullKey, settingKey, newValue.toString())}
+            onChange={(newValue) => handleAppSettingChange(fullKey, settingKey, newValue)}
           />
           <span className="status-display">{value}</span>
         </div>
       );
     } else {
-      // String setting - just display for now
+      // String setting or unknown - just display for now
       return (
         <span className="status-display" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {value}
+          {String(value)}
         </span>
       );
     }
