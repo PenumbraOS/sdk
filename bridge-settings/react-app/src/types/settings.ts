@@ -9,6 +9,8 @@ export type StatusMessage =
   | { type: 'settingChanged'; category: string; key: string; value: unknown }
   | { type: 'statusUpdate'; statusType: string; data: Record<string, unknown> }
   | { type: 'allSettings'; settings: Record<string, Record<string, unknown>> }
+  | { type: 'appStatusUpdate'; appId: string; component: string; data: Record<string, unknown> }
+  | { type: 'appEvent'; appId: string; eventType: string; payload: Record<string, unknown> }
   | { type: 'error'; message: string };
 
 export interface Setting {

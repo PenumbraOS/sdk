@@ -47,6 +47,38 @@ suspend fun connectToBridge(tag: String, context: Context): IBridge {
 //        return IBridge.Stub.asInterface(ServiceManager.getService("nfc"))
 }
 
+suspend fun waitForBridgeSystem(tag: String, bridge: IBridge) {
+    var iterations = 0
+    while (true) {
+        val provider = bridge.httpProvider
+        if (provider != null) {
+            Log.i(tag, "bridge-system registration signal received")
+            return
+        }
+        delay(5000)
+        if (iterations % 10 == 0) {
+            Log.i(tag, "Waiting for bridge-system to register")
+        }
+        iterations += 1
+    }
+}
+
+suspend fun waitForBridgeShell(tag: String, bridge: IBridge) {
+    var iterations = 0
+    while (true) {
+        val provider = bridge.shellProvider
+        if (provider != null) {
+            Log.i(tag, "bridge-shell registration signal received")
+            return
+        }
+        delay(5000)
+        if (iterations % 10 == 0) {
+            Log.i(tag, "Waiting for bridge-shell to register")
+        }
+        iterations += 1
+    }
+}
+
 // TODO: Figure this out and add to MockContext
 //    @SuppressLint("PrivateApi")
 //    fun registerReceiver(

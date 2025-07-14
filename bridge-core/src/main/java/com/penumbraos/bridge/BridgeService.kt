@@ -16,6 +16,8 @@ class BridgeService {
     private var settingsProvider: ISettingsProvider? = null
     private var shellProvider: IShellProvider? = null
 
+    private var registrationCount = 0
+
     private val binder = object : IBridge.Stub() {
         override fun getHttpProvider(): IBinder? {
             return this@BridgeService.httpProvider?.asBinder()
@@ -59,19 +61,34 @@ class BridgeService {
             this@BridgeService.sttProvider = sttProvider
             this@BridgeService.ledProvider = ledProvider
 
-            Log.d(TAG, "Broadcasting bridge ready")
-            MockActivityManager.sendBroadcast(Intent(BRIDGE_SERVICE_READY))
+            registrationCount++
+            sendBroadcastIfReady()
         }
 
         override fun registerSettingsService(settingsProvider: ISettingsProvider?) {
             Log.d(TAG, "Registering settings service")
             this@BridgeService.settingsProvider = settingsProvider
+
+            registrationCount++
+            sendBroadcastIfReady()
         }
 
         override fun registerShellService(shellProvider: IShellProvider?) {
             Log.d(TAG, "Registering shell service")
             this@BridgeService.shellProvider = shellProvider
+
+            registrationCount++
+            sendBroadcastIfReady()
         }
+    }
+
+    fun sendBroadcastIfReady() {
+        if (registrationCount != 3) {
+            return
+        }
+
+        Log.d(TAG, "Broadcasting bridge ready")
+        MockActivityManager.sendBroadcast(Intent(BRIDGE_SERVICE_READY))
     }
 
     fun asBinder(): IBridge = binder

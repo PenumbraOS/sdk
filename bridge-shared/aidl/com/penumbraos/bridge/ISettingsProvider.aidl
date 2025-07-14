@@ -10,4 +10,6 @@ interface ISettingsProvider {
     Map getAllSettings(String appId);
     Map getSystemSettings();
     void updateSystemSetting(String key, String value);
+    void sendAppStatusUpdate(String appId, String component, in Map payload);
+    void sendAppEvent(String appId, String eventType, in Map payload);
 }

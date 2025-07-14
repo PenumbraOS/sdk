@@ -120,6 +120,30 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
         }
     }
 
+    override fun sendAppStatusUpdate(appId: String, component: String, payload: Map<*, *>) {
+        providerScope.launch {
+            try {
+                val convertedPayload = convertMapPayload(payload)
+                settingsRegistry.sendAppStatusUpdate(appId, component, convertedPayload)
+                Log.d(TAG, "Sent app status update: $appId.$component")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending app status update: $appId.$component", e)
+            }
+        }
+    }
+
+    override fun sendAppEvent(appId: String, eventType: String, payload: Map<*, *>) {
+        providerScope.launch {
+            try {
+                val convertedPayload = convertMapPayload(payload)
+                settingsRegistry.sendAppEvent(appId, eventType, convertedPayload)
+                Log.d(TAG, "Sent app event: $appId.$eventType")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error sending app event: $appId.$eventType", e)
+            }
+        }
+    }
+
     private fun convertSchemaToDefinitions(schema: Map<*, *>): Map<String, SettingDefinition> {
         val definitions = mutableMapOf<String, SettingDefinition>()
 
@@ -168,6 +192,10 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
             value.toFloatOrNull() != null -> value.toFloat()
             else -> value
         }
+    }
+
+    private fun convertMapPayload(payload: Map<*, *>): Map<String, Any> {
+        return payload.mapKeys { it.key.toString() }.mapValues { it.value ?: "" }
     }
 
     private fun notifySettingsChanged(allSettings: Map<String, Any>) {

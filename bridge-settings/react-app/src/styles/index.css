@@ -232,3 +232,86 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 6px;
   margin-bottom: 16px;
 }
+
+/* MABL Status Styles */
+.mabl-status {
+  background: #f8f9fa;
+  border-left: 4px solid #9b59b6;
+  padding: 16px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 16px;
+}
+
+.mabl-status h3 {
+  color: #2c3e50;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.mabl-events {
+  margin-top: 16px;
+}
+
+.mabl-events h3 {
+  color: #2c3e50;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.events-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ecf0f1;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.event-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #3498db;
+  font-size: 14px;
+}
+
+.event-item:last-child {
+  margin-bottom: 0;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.event-icon {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.event-time {
+  font-size: 12px;
+  color: #7f8c8d;
+  font-family: monospace;
+}
+
+.event-description {
+  color: #2c3e50;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+
+.partial-text {
+  color: #f39c12;
+  font-style: italic;
+}
+
+.streaming-token {
+  color: #3498db;
+  font-family: monospace;
+  font-weight: bold;
+}

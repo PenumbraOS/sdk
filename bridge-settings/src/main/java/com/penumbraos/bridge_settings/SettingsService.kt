@@ -1,12 +1,11 @@
 package com.penumbraos.bridge_settings
 
 import MockContext
-import android.annotation.SuppressLint
-import android.content.Context
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.bridge.IShellProvider
 import com.penumbraos.bridge.external.connectToBridge
+import com.penumbraos.bridge.external.waitForBridgeShell
 import com.penumbraos.sdk.api.ShellClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,8 +34,10 @@ class SettingsService {
                 // Connect to bridge and get ShellClient
                 val bridge = connectToBridge(TAG, context)
                 Log.i(TAG, "Connected to bridge-core")
-                
-                val shellProvider = IShellProvider.Stub.asInterface(bridge.getShellProvider())
+
+                waitForBridgeShell(TAG, bridge)
+
+                val shellProvider = IShellProvider.Stub.asInterface(bridge.shellProvider)
                 val shellClient = ShellClient(shellProvider)
                 Log.i(TAG, "Created ShellClient")
 
@@ -49,6 +50,9 @@ class SettingsService {
                 Log.i(TAG, "Registered settings service")
 
                 webServer = SettingsWebServer(settingsRegistry)
+
+                // Connect registry to web server for broadcasting
+                settingsRegistry.setWebServer(webServer)
 
                 webServer.start()
             }

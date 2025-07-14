@@ -3,6 +3,7 @@ import ConnectionStatus from "./components/ConnectionStatus";
 import SystemStatus from "./components/SystemStatus";
 import SystemSettings from "./components/SystemSettings";
 import AppSettings from "./components/AppSettings";
+import MABLStatus from "./components/MABLStatus";
 
 function App() {
   const { loading, error, connected } = useSettings();
@@ -33,6 +34,7 @@ function App() {
           <div className="settings-grid">
             <SystemSettings />
             <AppSettings />
+            <MABLStatus />
           </div>
         </>
       )}

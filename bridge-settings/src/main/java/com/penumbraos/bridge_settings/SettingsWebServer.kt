@@ -78,6 +78,22 @@ sealed class StatusMessage {
     data class AllSettings(val settings: Map<String, Map<String, JsonElement>>) : StatusMessage()
 
     @Serializable
+    @SerialName("appStatusUpdate")
+    data class AppStatusUpdate(
+        val appId: String,
+        val component: String,
+        val data: Map<String, JsonElement>
+    ) : StatusMessage()
+
+    @Serializable
+    @SerialName("appEvent")
+    data class AppEvent(
+        val appId: String,
+        val eventType: String,
+        val payload: Map<String, JsonElement>
+    ) : StatusMessage()
+
+    @Serializable
     @SerialName("error")
     data class Error(val message: String) : StatusMessage()
 }
@@ -358,6 +374,26 @@ class SettingsWebServer(
         broadcast(message)
     }
 
+    suspend fun broadcastAppStatusUpdate(appId: String, component: String, payload: Map<String, Any>) {
+        val message = StatusMessage.AppStatusUpdate(
+            appId = appId,
+            component = component,
+            data = convertValuesToJsonElements(payload)
+        )
+        broadcast(message)
+        Log.d(TAG, "Broadcasted app status update: $appId.$component")
+    }
+
+    suspend fun broadcastAppEvent(appId: String, eventType: String, payload: Map<String, Any>) {
+        val message = StatusMessage.AppEvent(
+            appId = appId,
+            eventType = eventType,
+            payload = convertValuesToJsonElements(payload)
+        )
+        broadcast(message)
+        Log.d(TAG, "Broadcasted app event: $appId.$eventType")
+    }
+
     private suspend fun broadcast(message: StatusMessage) {
         try {
             val messageText = Json.encodeToString(message)
@@ -382,18 +418,23 @@ class SettingsWebServer(
         }
     }
 
+    private fun convertValuesToJsonElements(data: Map<String, Any>): Map<String, JsonElement> {
+        return data.mapValues { (_, value) ->
+            when (value) {
+                is Boolean -> JsonPrimitive(value)
+                is Number -> JsonPrimitive(value)
+                is String -> JsonPrimitive(value)
+                else -> JsonPrimitive(value.toString())
+            }
+        }
+    }
+
     private fun convertToJsonCompatibleMap(input: Map<String, Any>): Map<String, Map<String, JsonElement>> {
         return input.mapValues { (_, value) ->
             when (value) {
-                is Map<*, *> -> value.mapKeys { it.key.toString() }
-                    .mapValues { entry ->
-                        when (val v = entry.value) {
-                            is Boolean -> JsonPrimitive(v)
-                            is Number -> JsonPrimitive(v)
-                            is String -> JsonPrimitive(v)
-                            else -> JsonPrimitive(v.toString())
-                        }
-                    }
+                is Map<*, *> -> convertValuesToJsonElements(
+                    value.mapKeys { it.key.toString() }.mapValues { it.value ?: "" }
+                )
 
                 else -> mapOf("value" to when (value) {
                     is Boolean -> JsonPrimitive(value)

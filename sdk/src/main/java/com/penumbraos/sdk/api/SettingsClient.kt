@@ -102,6 +102,24 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
             false
         }
     }
+
+    fun sendStatusUpdate(appId: String, component: String, payload: Map<String, Any>) {
+        try {
+            settingsProvider.sendAppStatusUpdate(appId, component, payload)
+            Log.d(TAG, "Sent status update: $appId.$component")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to send status update: $appId.$component", e)
+        }
+    }
+
+    fun sendEvent(appId: String, eventType: String, payload: Map<String, Any>) {
+        try {
+            settingsProvider.sendAppEvent(appId, eventType, payload)
+            Log.d(TAG, "Sent event: $appId.$eventType")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to send event: $appId.$eventType", e)
+        }
+    }
 }
 
 class SettingsCategoryBuilder {

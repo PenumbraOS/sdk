@@ -62,6 +62,9 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
         ConcurrentHashMap<String, ConcurrentHashMap<String, Map<String, JsonElement>>>()
 
     private val humaneDisplayController = HumaneDisplayController(shellClient)
+    
+    // Reference to web server for broadcasting (set by SettingsService)
+    private var webServer: SettingsWebServer? = null
 
     private val _settingsFlow = MutableStateFlow<Map<String, Any>>(emptyMap())
     val settingsFlow: StateFlow<Map<String, Any>> = _settingsFlow.asStateFlow()
@@ -81,6 +84,10 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
     suspend fun initialize() {
         loadCurrentAndroidSettings()
         updateSettingsFlow()
+    }
+
+    fun setWebServer(webServer: SettingsWebServer) {
+        this.webServer = webServer
     }
 
     private fun loadSavedSettings() {
@@ -419,6 +426,16 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
         }
     }
 
+
+    suspend fun sendAppStatusUpdate(appId: String, component: String, payload: Map<String, Any>) {
+        webServer?.broadcastAppStatusUpdate(appId, component, payload)
+            ?: Log.w(TAG, "Cannot send app status update - web server not initialized")
+    }
+
+    suspend fun sendAppEvent(appId: String, eventType: String, payload: Map<String, Any>) {
+        webServer?.broadcastAppEvent(appId, eventType, payload)
+            ?: Log.w(TAG, "Cannot send app event - web server not initialized")
+    }
 
     private fun updateSettingsFlow() {
         _settingsFlow.value = getAllSettings()
