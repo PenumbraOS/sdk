@@ -35,6 +35,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
@@ -74,7 +75,7 @@ sealed class StatusMessage {
 
     @Serializable
     @SerialName("allSettings")
-    data class AllSettings(val settings: Map<String, Map<String, String>>) : StatusMessage()
+    data class AllSettings(val settings: Map<String, Map<String, JsonElement>>) : StatusMessage()
 
     @Serializable
     @SerialName("error")
@@ -289,7 +290,7 @@ class SettingsWebServer(
         try {
             // Send current settings to new client
             val allSettings = settingsRegistry.getAllSettings()
-            sendToSession(session, StatusMessage.AllSettings(convertToStringMap(allSettings)))
+            sendToSession(session, StatusMessage.AllSettings(convertToJsonCompatibleMap(allSettings)))
 
             for (frame in session.incoming) {
                 when (frame) {
@@ -323,7 +324,7 @@ class SettingsWebServer(
         when (message) {
             is SettingsMessage.GetAllSettings -> {
                 val allSettings = settingsRegistry.getAllSettings()
-                sendToSession(session, StatusMessage.AllSettings(convertToStringMap(allSettings)))
+                sendToSession(session, StatusMessage.AllSettings(convertToJsonCompatibleMap(allSettings)))
             }
 
             is SettingsMessage.UpdateSetting -> {
@@ -353,7 +354,7 @@ class SettingsWebServer(
     }
 
     private suspend fun broadcastSettingsUpdate(allSettings: Map<String, Any>) {
-        val message = StatusMessage.AllSettings(convertToStringMap(allSettings))
+        val message = StatusMessage.AllSettings(convertToJsonCompatibleMap(allSettings))
         broadcast(message)
     }
 
@@ -381,13 +382,25 @@ class SettingsWebServer(
         }
     }
 
-    private fun convertToStringMap(input: Map<String, Any>): Map<String, Map<String, String>> {
+    private fun convertToJsonCompatibleMap(input: Map<String, Any>): Map<String, Map<String, JsonElement>> {
         return input.mapValues { (_, value) ->
             when (value) {
                 is Map<*, *> -> value.mapKeys { it.key.toString() }
-                    .mapValues { it.value.toString() }
+                    .mapValues { entry ->
+                        when (val v = entry.value) {
+                            is Boolean -> JsonPrimitive(v)
+                            is Number -> JsonPrimitive(v)
+                            is String -> JsonPrimitive(v)
+                            else -> JsonPrimitive(v.toString())
+                        }
+                    }
 
-                else -> mapOf("value" to value.toString())
+                else -> mapOf("value" to when (value) {
+                    is Boolean -> JsonPrimitive(value)
+                    is Number -> JsonPrimitive(value) 
+                    is String -> JsonPrimitive(value)
+                    else -> JsonPrimitive(value.toString())
+                })
             }
         }
     }

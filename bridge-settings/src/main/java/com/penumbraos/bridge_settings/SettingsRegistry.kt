@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
 import android.util.Log
+import com.penumbraos.sdk.api.ShellClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,12 +53,15 @@ data class PersistedSettings(
     val appSettings: Map<String, Map<String, Map<String, JsonElement>>> = emptyMap()
 )
 
-class SettingsRegistry(private val context: Context) {
+class SettingsRegistry(private val context: Context, private val shellClient: ShellClient) {
     private val appSettings = ConcurrentHashMap<String, MutableMap<String, AppSettingsCategory>>()
     private val systemSettings = ConcurrentHashMap<String, Any>()
-    
+
     // Store saved app settings values until apps register their schemas
-    private val savedAppSettingsValues = ConcurrentHashMap<String, ConcurrentHashMap<String, Map<String, JsonElement>>>()
+    private val savedAppSettingsValues =
+        ConcurrentHashMap<String, ConcurrentHashMap<String, Map<String, JsonElement>>>()
+
+    private val humaneDisplayController = HumaneDisplayController(shellClient)
 
     private val _settingsFlow = MutableStateFlow<Map<String, Any>>(emptyMap())
     val settingsFlow: StateFlow<Map<String, Any>> = _settingsFlow.asStateFlow()
@@ -71,7 +75,12 @@ class SettingsRegistry(private val context: Context) {
 
     init {
         loadSavedSettings()
-        initializeSystemSettings()
+        initializeSystemSettingsSync()
+    }
+
+    suspend fun initialize() {
+        loadCurrentAndroidSettings()
+        updateSettingsFlow()
     }
 
     private fun loadSavedSettings() {
@@ -89,7 +98,8 @@ class SettingsRegistry(private val context: Context) {
 
                 // Load app settings values (without schemas - will be merged when apps register)
                 persistedData.appSettings.forEach { (appId, categories) ->
-                    val appSavedValues = savedAppSettingsValues.getOrPut(appId) { ConcurrentHashMap() }
+                    val appSavedValues =
+                        savedAppSettingsValues.getOrPut(appId) { ConcurrentHashMap() }
                     categories.forEach { (category, settingValues) ->
                         appSavedValues[category] = settingValues
                     }
@@ -102,14 +112,8 @@ class SettingsRegistry(private val context: Context) {
         }
     }
 
-    private fun initializeSystemSettings() {
-        // Load current Android system settings
-        loadCurrentAndroidSettings()
-
-        updateSettingsFlow()
-    }
-
-    private fun loadCurrentAndroidSettings() {
+    private fun initializeSystemSettingsSync() {
+        // Only load synchronous settings in constructor
         try {
             // Audio settings
             val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -120,18 +124,43 @@ class SettingsRegistry(private val context: Context) {
             systemSettings["audio.muted"] = audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
 
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to load sync Android settings", e)
+        }
+        updateSettingsFlow()
+    }
+
+    private suspend fun loadCurrentAndroidSettings() {
+        try {
+            // Refresh audio settings
+            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+            val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            systemSettings["audio.volume"] =
+                (currentVolume * 100 / maxVolume) // Convert to 0-100 scale
+            systemSettings["audio.muted"] = audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+
+            // Humane display controller settings
+            try {
+                val displayEnabled = humaneDisplayController.isDisplayEnabled()
+                systemSettings["display.humane_enabled"] = displayEnabled
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load Humane display state", e)
+                systemSettings["display.humane_enabled"] = false
+            }
+
+        } catch (e: Exception) {
             Log.e(TAG, "Failed to load current Android settings", e)
         }
     }
 
     private fun isAndroidSystemSetting(key: String): Boolean {
         return when (key) {
-            "audio.volume", "audio.muted" -> true
+            "audio.volume", "audio.muted", "display.humane_enabled" -> true
             else -> false
         }
     }
 
-    private fun applyAndroidSystemSetting(key: String, value: Any): Boolean {
+    private suspend fun applyAndroidSystemSetting(key: String, value: Any): Boolean {
         return try {
             when (key) {
                 "audio.volume" -> {
@@ -161,6 +190,25 @@ class SettingsRegistry(private val context: Context) {
                     )
                     Log.i(TAG, "Set audio muted to $muted")
                     true
+                }
+
+                "display.humane_enabled" -> {
+                    val enabled = when (value) {
+                        is Boolean -> value
+                        else -> return false
+                    }
+                    Log.i(TAG, "Attempting to set Humane display state to $enabled")
+                    val success = humaneDisplayController.setDisplayEnabled(enabled)
+                    if (success) {
+                        // Verify the actual state after the operation
+                        val actualState = humaneDisplayController.isDisplayEnabled()
+                        Log.i(TAG, "Humane display command succeeded. Actual state: $actualState, requested: $enabled")
+                        // Update with the actual state, not the requested state
+                        systemSettings["display.humane_enabled"] = actualState
+                    } else {
+                        Log.w(TAG, "Failed to update Humane display state to $enabled")
+                    }
+                    success
                 }
 
                 else -> {
@@ -194,7 +242,8 @@ class SettingsRegistry(private val context: Context) {
             if (definitions.containsKey(key)) {
                 // Convert JsonElement back to proper type
                 val convertedValue = jsonValue.jsonPrimitive.let { primitive ->
-                    primitive.booleanOrNull ?: primitive.intOrNull ?: primitive.doubleOrNull ?: primitive.content
+                    primitive.booleanOrNull ?: primitive.intOrNull ?: primitive.doubleOrNull
+                    ?: primitive.content
                 }
                 settingsCategory.values[key] = convertedValue
                 Log.d(TAG, "Restored saved value for $appId.$category.$key = $convertedValue")
@@ -225,10 +274,10 @@ class SettingsRegistry(private val context: Context) {
         }
 
         settingsCategory.values[key] = value
-        
+
         // Save app settings to file
         saveSettings()
-        
+
         updateSettingsFlow()
         Log.i(TAG, "Updated app setting: $appId.$category.$key = $value")
         return true
@@ -244,7 +293,7 @@ class SettingsRegistry(private val context: Context) {
         } ?: emptyMap()
     }
 
-    fun updateSystemSetting(key: String, value: Any): Boolean {
+    suspend fun updateSystemSetting(key: String, value: Any): Boolean {
         if (validateSystemSetting(key, value)) {
             // Apply the setting to Android system if it's a system setting
             val success = if (isAndroidSystemSetting(key)) {
@@ -254,10 +303,10 @@ class SettingsRegistry(private val context: Context) {
             }
 
             if (success) {
-                systemSettings[key] = value
-
-                // Save to file only for non-Android system settings
+                // Only update systemSettings for non-Android settings
+                // Android settings update themselves in applyAndroidSystemSetting
                 if (!isAndroidSystemSetting(key)) {
+                    systemSettings[key] = value
                     saveSettings()
                 }
 
@@ -324,6 +373,7 @@ class SettingsRegistry(private val context: Context) {
         return when (key) {
             "audio.volume" -> value is Number && value.toInt() in 0..100
             "audio.muted" -> value is Boolean
+            "display.humane_enabled" -> value is Boolean
             else -> true // Allow unknown settings for extensibility
         }
     }

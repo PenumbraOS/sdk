@@ -20,6 +20,16 @@ const SystemSettings: React.FC = () => {
       <h2>System Settings</h2>
       
       <div className="setting-item">
+        <span className="setting-label">Display Enabled</span>
+        <div className="setting-control">
+          <ToggleSwitch
+            enabled={Boolean(systemSettings['display.humane_enabled'])}
+            onChange={(enabled) => handleToggle('display.humane_enabled', enabled)}
+          />
+        </div>
+      </div>
+
+      <div className="setting-item">
         <span className="setting-label">Audio Volume</span>
         <div className="setting-control">
           <Slider

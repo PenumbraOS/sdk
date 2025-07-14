@@ -106,15 +106,17 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
     }
 
     override fun updateSystemSetting(key: String, value: String) {
-        try {
-            val convertedValue = convertStringValue(value)
-            val success = settingsRegistry.updateSystemSetting(key, convertedValue)
+        providerScope.launch {
+            try {
+                val convertedValue = convertStringValue(value)
+                val success = settingsRegistry.updateSystemSetting(key, convertedValue)
 
-            if (!success) {
-                Log.w(TAG, "Failed to update system setting: $key = $value")
+                if (!success) {
+                    Log.w(TAG, "Failed to update system setting: $key = $value")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating system setting: $key", e)
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating system setting: $key", e)
         }
     }
 
