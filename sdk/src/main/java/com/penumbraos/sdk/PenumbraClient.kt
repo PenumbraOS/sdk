@@ -11,6 +11,7 @@ import com.penumbraos.bridge.IBridge
 import com.penumbraos.bridge.IHttpProvider
 import com.penumbraos.bridge.ILedProvider
 import com.penumbraos.bridge.ISettingsProvider
+import com.penumbraos.bridge.IShellProvider
 import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
@@ -18,6 +19,7 @@ import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.LedClient
 import com.penumbraos.sdk.api.SettingsClient
+import com.penumbraos.sdk.api.ShellClient
 import com.penumbraos.sdk.api.SttClient
 import com.penumbraos.sdk.api.TouchpadClient
 import com.penumbraos.sdk.api.WebSocketClient
@@ -41,6 +43,7 @@ class PenumbraClient {
     lateinit var led: LedClient
 
     lateinit var settings: SettingsClient
+    lateinit var shell: ShellClient
 
     constructor(context: Context, allowInitFailure: Boolean = false) {
         this.context = context
@@ -116,6 +119,9 @@ class PenumbraClient {
             val settingsProvider =
                 ISettingsProvider.Stub.asInterface(service!!.getSettingsProvider())
 
+            val shellProvider = 
+                IShellProvider.Stub.asInterface(service!!.getShellProvider())
+
             http = HttpClient(httpProvider)
             websocket = WebSocketClient(webSocketProvider)
             stt.provider = sttProvider
@@ -124,6 +130,7 @@ class PenumbraClient {
             led = LedClient(ledProvider)
             
             settings = SettingsClient(settingsProvider)
+            shell = ShellClient(shellProvider)
         } catch (e: Exception) {
             throw Exception("Failed to connect to service bridge", e)
         }

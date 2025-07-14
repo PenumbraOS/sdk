@@ -14,6 +14,7 @@ class BridgeService {
     private var sttProvider: ISttProvider? = null
     private var ledProvider: ILedProvider? = null
     private var settingsProvider: ISettingsProvider? = null
+    private var shellProvider: IShellProvider? = null
 
     private val binder = object : IBridge.Stub() {
         override fun getHttpProvider(): IBinder? {
@@ -40,6 +41,10 @@ class BridgeService {
             return this@BridgeService.settingsProvider?.asBinder()
         }
 
+        override fun getShellProvider(): IBinder? {
+            return this@BridgeService.shellProvider?.asBinder()
+        }
+
         override fun registerSystemService(
             httpProvider: IHttpProvider?,
             webSocketProvider: IWebSocketProvider?,
@@ -61,6 +66,11 @@ class BridgeService {
         override fun registerSettingsService(settingsProvider: ISettingsProvider?) {
             Log.d(TAG, "Registering settings service")
             this@BridgeService.settingsProvider = settingsProvider
+        }
+
+        override fun registerShellService(shellProvider: IShellProvider?) {
+            Log.d(TAG, "Registering shell service")
+            this@BridgeService.shellProvider = shellProvider
         }
     }
 

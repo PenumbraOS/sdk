@@ -6,6 +6,7 @@ import com.penumbraos.bridge.ITouchpadProvider;
 import com.penumbraos.bridge.ISttProvider;
 import com.penumbraos.bridge.ILedProvider;
 import com.penumbraos.bridge.ISettingsProvider;
+import com.penumbraos.bridge.IShellProvider;
 
 interface IBridge {
     IBinder getHttpProvider();
@@ -14,6 +15,8 @@ interface IBridge {
     IBinder getSttProvider();
     IBinder getLedProvider();
     IBinder getSettingsProvider();
+    IBinder getShellProvider();
     void registerSystemService(IHttpProvider httpProvider, IWebSocketProvider webSocketProvider, ITouchpadProvider touchpadProvider, ISttProvider sttProvider, ILedProvider ledProvider);
     void registerSettingsService(ISettingsProvider settingsProvider);
+    void registerShellService(IShellProvider shellProvider);
 }

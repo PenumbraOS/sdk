@@ -1,0 +1,5 @@
+[Service]
+Name=bridge-shell-service
+Uid=2000
+Autostart=true
+ExecJvmClass=com.penumbraos.bridge_shell/com.penumbraos.bridge_shell.Entrypoint
