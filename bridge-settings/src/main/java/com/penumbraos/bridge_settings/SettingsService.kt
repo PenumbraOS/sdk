@@ -2,6 +2,7 @@ package com.penumbraos.bridge_settings
 
 import MockContext
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.bridge.external.connectToBridge
@@ -22,13 +23,21 @@ class SettingsService {
         Log.i(TAG, "Starting Settings Service")
 
         try {
-            settingsRegistry = SettingsRegistry()
-            settingsProvider = SettingsProvider(settingsRegistry)
-            webServer = SettingsWebServer(settingsRegistry)
-
-            // Register with bridge service
+            // Register with bridge service first to get context
             serviceScope.launch {
-                registerWithBridge()
+                val classLoader = ClassLoader.getSystemClassLoader()
+                val thread = Common.initialize(ClassLoader.getSystemClassLoader())
+                val context =
+                    MockContext.createWithAppContext(classLoader, thread, "com.android.settings")
+
+                // Initialize components with context
+                settingsRegistry = SettingsRegistry(context)
+                settingsProvider = SettingsProvider(settingsRegistry)
+                
+                registerWithBridge(context, settingsProvider)
+
+                webServer = SettingsWebServer(settingsRegistry)
+
                 webServer.start()
             }
 
@@ -50,17 +59,16 @@ class SettingsService {
     }
 
     @SuppressLint("PrivateApi")
-    private suspend fun registerWithBridge() {
-        val classLoader = ClassLoader.getSystemClassLoader()
-        val thread = Common.initialize(ClassLoader.getSystemClassLoader())
-        val context =
-            MockContext.createWithAppContext(classLoader, thread, "com.android.settings")
-
+    private suspend fun registerWithBridge(
+        context: Context,
+        settingsProvider: SettingsProvider
+    ): Context {
         try {
             val bridge = connectToBridge(TAG, context)
             Log.i(TAG, "Connected to bridge-core")
             bridge.registerSettingsService(settingsProvider)
             Log.i(TAG, "Registered settings bridge")
+            return context
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register with bridge service", e)
             throw e

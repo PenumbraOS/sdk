@@ -20,31 +20,6 @@ const SystemSettings: React.FC = () => {
       <h2>System Settings</h2>
       
       <div className="setting-item">
-        <span className="setting-label">Display Brightness</span>
-        <div className="setting-control">
-          <Slider
-            value={Number(systemSettings['display.brightness']) || 50}
-            min={0}
-            max={100}
-            onChange={(value) => handleSlider('display.brightness', value)}
-          />
-          <span className="status-display">
-            {Number(systemSettings['display.brightness']) || 50}%
-          </span>
-        </div>
-      </div>
-
-      <div className="setting-item">
-        <span className="setting-label">Auto Brightness</span>
-        <div className="setting-control">
-          <ToggleSwitch
-            enabled={Boolean(systemSettings['display.auto_brightness'])}
-            onChange={(enabled) => handleToggle('display.auto_brightness', enabled)}
-          />
-        </div>
-      </div>
-
-      <div className="setting-item">
         <span className="setting-label">Audio Volume</span>
         <div className="setting-control">
           <Slider
@@ -65,26 +40,6 @@ const SystemSettings: React.FC = () => {
           <ToggleSwitch
             enabled={Boolean(systemSettings['audio.muted'])}
             onChange={(enabled) => handleToggle('audio.muted', enabled)}
-          />
-        </div>
-      </div>
-
-      <div className="setting-item">
-        <span className="setting-label">WiFi Enabled</span>
-        <div className="setting-control">
-          <ToggleSwitch
-            enabled={Boolean(systemSettings['network.wifi_enabled'])}
-            onChange={(enabled) => handleToggle('network.wifi_enabled', enabled)}
-          />
-        </div>
-      </div>
-
-      <div className="setting-item">
-        <span className="setting-label">Power Save Mode</span>
-        <div className="setting-control">
-          <ToggleSwitch
-            enabled={Boolean(systemSettings['battery.power_save_mode'])}
-            onChange={(enabled) => handleToggle('battery.power_save_mode', enabled)}
           />
         </div>
       </div>
