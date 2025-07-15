@@ -48,9 +48,6 @@ android {
             java {
                 srcDir("${project.rootDir}/bridge-shared/java")
             }
-            aidl {
-                srcDir("${project.rootDir}/bridge-shared/aidl")
-            }
         }
     }
 }
