@@ -43,13 +43,6 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
-    sourceSets {
-        named("main") {
-            java {
-                srcDir("${project.rootDir}/bridge-shared/java")
-            }
-        }
-    }
 }
 
 dependencies {
