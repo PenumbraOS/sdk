@@ -53,6 +53,15 @@ const SystemSettings: React.FC = () => {
           />
         </div>
       </div>
+
+      <div className="setting-item">
+        <span className="setting-label">Device Temperature</span>
+        <div className="setting-control">
+          <span className="status-display">
+            {Number(systemSettings['device.temperature'])?.toFixed(1) || '--'}°C
+          </span>
+        </div>
+      </div>
     </div>
   );
 };

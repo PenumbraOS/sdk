@@ -4,10 +4,15 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
 import android.util.Log
+import com.penumbraos.bridge_settings.android.TemperatureController
 import com.penumbraos.sdk.api.ShellClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -53,7 +58,7 @@ data class PersistedSettings(
     val appSettings: Map<String, Map<String, Map<String, JsonElement>>> = emptyMap()
 )
 
-class SettingsRegistry(private val context: Context, private val shellClient: ShellClient) {
+class SettingsRegistry(private val context: Context, val shellClient: ShellClient) {
     private val appSettings = ConcurrentHashMap<String, MutableMap<String, AppSettingsCategory>>()
     private val systemSettings = ConcurrentHashMap<String, Any>()
 
@@ -62,7 +67,9 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
         ConcurrentHashMap<String, ConcurrentHashMap<String, Map<String, JsonElement>>>()
 
     private val humaneDisplayController = HumaneDisplayController(shellClient)
-    
+    private val temperatureController = TemperatureController(shellClient)
+    private val registryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     // Reference to web server for broadcasting (set by SettingsService)
     private var webServer: SettingsWebServer? = null
 
@@ -79,6 +86,7 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
     init {
         loadSavedSettings()
         initializeSystemSettingsSync()
+        setupTemperatureMonitoring()
     }
 
     suspend fun initialize() {
@@ -88,6 +96,8 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
 
     fun setWebServer(webServer: SettingsWebServer) {
         this.webServer = webServer
+        // Force an initial emission so WebServer gets current settings immediately
+        updateSettingsFlow()
     }
 
     private fun loadSavedSettings() {
@@ -129,7 +139,6 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
             systemSettings["audio.volume"] =
                 (currentVolume * 100 / maxVolume) // Convert to 0-100 scale
             systemSettings["audio.muted"] = audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
-
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load sync Android settings", e)
         }
@@ -162,7 +171,7 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
 
     private fun isAndroidSystemSetting(key: String): Boolean {
         return when (key) {
-            "audio.volume", "audio.muted", "display.humane_enabled" -> true
+            "audio.volume", "audio.muted", "display.humane_enabled", "device.temperature" -> true
             else -> false
         }
     }
@@ -209,7 +218,10 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
                     if (success) {
                         // Verify the actual state after the operation
                         val actualState = humaneDisplayController.isDisplayEnabled()
-                        Log.i(TAG, "Humane display command succeeded. Actual state: $actualState, requested: $enabled")
+                        Log.i(
+                            TAG,
+                            "Humane display command succeeded. Actual state: $actualState, requested: $enabled"
+                        )
                         // Update with the actual state, not the requested state
                         systemSettings["display.humane_enabled"] = actualState
                     } else {
@@ -381,6 +393,7 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
             "audio.volume" -> value is Number && value.toInt() in 0..100
             "audio.muted" -> value is Boolean
             "display.humane_enabled" -> value is Boolean
+            "device.temperature" -> value is Number // Read-only, but validate type
             else -> true // Allow unknown settings for extensibility
         }
     }
@@ -435,6 +448,15 @@ class SettingsRegistry(private val context: Context, private val shellClient: Sh
     suspend fun sendAppEvent(appId: String, eventType: String, payload: Map<String, Any>) {
         webServer?.broadcastAppEvent(appId, eventType, payload)
             ?: Log.w(TAG, "Cannot send app event - web server not initialized")
+    }
+
+    private fun setupTemperatureMonitoring() {
+        registryScope.launch {
+            temperatureController.temperatureFlow.collect { temperature ->
+                systemSettings["device.temperature"] = temperature
+                updateSettingsFlow()
+            }
+        }
     }
 
     private fun updateSettingsFlow() {
