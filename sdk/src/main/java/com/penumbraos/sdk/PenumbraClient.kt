@@ -45,26 +45,21 @@ class PenumbraClient {
     lateinit var settings: SettingsClient
     lateinit var shell: ShellClient
 
-    constructor(context: Context, allowInitFailure: Boolean = false) {
+    constructor(context: Context) {
         this.context = context
         registerBroadcastListener()
         try {
             this.initialize()
-        } catch (e: Exception) {
-            if (!allowInitFailure) {
-                throw e
-            }
-
-            Log.e(TAG, "Failed to initialize bridge", e)
+        } catch (_: Exception) {
+            Log.w(TAG, "Could not connect to bridge")
         }
     }
 
     constructor(
         context: Context,
         bridgeReadyListener: (() -> Unit),
-        allowInitFailure: Boolean = false
     ) : this(
-        context, allowInitFailure
+        context
     ) {
         this.bridgeReadyListeners.add(bridgeReadyListener)
     }
@@ -85,7 +80,7 @@ class PenumbraClient {
                                 Log.e(TAG, "Failed to invoke bridge ready listener", e)
                             }
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         // Ignore
                     }
                     bridgeReadySignal.complete(Unit)
@@ -119,7 +114,7 @@ class PenumbraClient {
             val settingsProvider =
                 ISettingsProvider.Stub.asInterface(service!!.getSettingsProvider())
 
-            val shellProvider = 
+            val shellProvider =
                 IShellProvider.Stub.asInterface(service!!.getShellProvider())
 
             http = HttpClient(httpProvider)

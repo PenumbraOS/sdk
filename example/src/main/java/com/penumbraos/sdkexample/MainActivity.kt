@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         try {
-            client = PenumbraClient(applicationContext, true)
+            client = PenumbraClient(applicationContext)
         } catch (e: SecurityException) {
 //                serviceConnectionStatus = "SecurityException: Cannot bind to service. Check permissions and SELinux."
             Log.e("MainActivity", "SecurityException binding to service", e)
