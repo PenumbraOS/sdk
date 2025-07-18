@@ -189,6 +189,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                     val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
                     val systemVolume = (volume * maxVolume / 100).coerceIn(0, maxVolume)
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, systemVolume, 0)
+                    systemSettings["audio.volume"] = volume
                     Log.i(TAG, "Set audio volume to $systemVolume/$maxVolume (${volume}%)")
                     true
                 }
@@ -204,6 +205,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                         AudioManager.STREAM_MUSIC,
                         if (muted) AudioManager.ADJUST_MUTE else AudioManager.ADJUST_UNMUTE, 0
                     )
+                    systemSettings["audio.muted"] = muted
                     Log.i(TAG, "Set audio muted to $muted")
                     true
                 }
@@ -322,8 +324,6 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
             }
 
             if (success) {
-                // Only update systemSettings for non-Android settings
-                // Android settings update themselves in applyAndroidSystemSetting
                 if (!isAndroidSystemSetting(key)) {
                     systemSettings[key] = value
                     saveSettings()
