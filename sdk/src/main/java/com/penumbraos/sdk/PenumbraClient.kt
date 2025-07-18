@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
 import com.penumbraos.bridge.IBridge
+import com.penumbraos.bridge.IHandTrackingProvider
 import com.penumbraos.bridge.IHttpProvider
 import com.penumbraos.bridge.ILedProvider
 import com.penumbraos.bridge.ISettingsProvider
@@ -16,6 +17,7 @@ import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
+import com.penumbraos.sdk.api.HandTrackingClient
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.LedClient
 import com.penumbraos.sdk.api.SettingsClient
@@ -41,6 +43,7 @@ class PenumbraClient {
 
     lateinit var touchpad: TouchpadClient
     lateinit var led: LedClient
+    lateinit var handTracking: HandTrackingClient
 
     lateinit var settings: SettingsClient
     lateinit var shell: ShellClient
@@ -110,6 +113,8 @@ class PenumbraClient {
             val touchpadProvider =
                 ITouchpadProvider.Stub.asInterface(service!!.getTouchpadProvider())
             val ledProvider = ILedProvider.Stub.asInterface(service!!.getLedProvider())
+            val handTrackingProvider =
+                IHandTrackingProvider.Stub.asInterface(service!!.getHandTrackingProvider())
 
             val settingsProvider =
                 ISettingsProvider.Stub.asInterface(service!!.getSettingsProvider())
@@ -123,7 +128,8 @@ class PenumbraClient {
 
             touchpad = TouchpadClient(touchpadProvider)
             led = LedClient(ledProvider)
-            
+            handTracking = HandTrackingClient(handTrackingProvider)
+
             settings = SettingsClient(settingsProvider)
             shell = ShellClient(shellProvider)
         } catch (e: Exception) {

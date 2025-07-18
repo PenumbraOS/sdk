@@ -1,12 +1,11 @@
 package com.penumbraos.bridge_system.provider
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.ILedProvider
 import com.penumbraos.bridge.LedAnimationIpc
-import dalvik.system.DexClassLoader
+import com.penumbraos.bridge_system.getApkClassLoader
 import java.lang.reflect.Method
 
 private const val TAG = "LedProvider"
@@ -40,16 +39,8 @@ class LedProvider(private val context: Context) : ILedProvider.Stub() {
             return;
         }
 
-        val packageManager = context.packageManager
-        val apkPath: String
-        try {
-            val packageInfo = packageManager.getPackageInfo("humane.experience.notifications", 0)
-            apkPath = packageInfo.applicationInfo!!.sourceDir
-        } catch (e: PackageManager.NameNotFoundException) {
-            throw Error("Could not look up humane.experience.notifications for class extraction", e)
-        }
-
-        val notificationsClassLoader = DexClassLoader(apkPath, null, null, null)
+        val notificationsClassLoader =
+            getApkClassLoader(context, "humane.experience.systemnavigation")
         val iPrivacyMcuServiceClass =
             notificationsClassLoader.loadClass("humane.pmcu.IPrivacyMcuService")
         playAnimationMethod = iPrivacyMcuServiceClass.getMethod("playAnimation", Int::class.java)

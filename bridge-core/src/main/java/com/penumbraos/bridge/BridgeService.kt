@@ -10,14 +10,15 @@ class BridgeService {
 
     private var httpProvider: IHttpProvider? = null
     private var webSocketProvider: IWebSocketProvider? = null
-    private var touchpadProvider: ITouchpadProvider? = null
     private var sttProvider: ISttProvider? = null
+
+    private var touchpadProvider: ITouchpadProvider? = null
     private var ledProvider: ILedProvider? = null
+    private var handTrackingProvider: IHandTrackingProvider? = null
+
     private var settingsProvider: ISettingsProvider? = null
     private var shellProvider: IShellProvider? = null
-
-    private var registrationCount = 0
-
+    
     private val binder = object : IBridge.Stub() {
         override fun getHttpProvider(): IBinder? {
             return this@BridgeService.httpProvider?.asBinder()
@@ -27,16 +28,20 @@ class BridgeService {
             return this@BridgeService.webSocketProvider?.asBinder()
         }
 
-        override fun getTouchpadProvider(): IBinder? {
-            return this@BridgeService.touchpadProvider?.asBinder()
-        }
-
         override fun getSttProvider(): IBinder? {
             return this@BridgeService.sttProvider?.asBinder()
         }
 
+        override fun getTouchpadProvider(): IBinder? {
+            return this@BridgeService.touchpadProvider?.asBinder()
+        }
+
         override fun getLedProvider(): IBinder? {
             return this@BridgeService.ledProvider?.asBinder()
+        }
+
+        override fun getHandTrackingProvider(): IBinder? {
+            return this@BridgeService.handTrackingProvider?.asBinder()
         }
 
         override fun getSettingsProvider(): IBinder? {
@@ -50,18 +55,20 @@ class BridgeService {
         override fun registerSystemService(
             httpProvider: IHttpProvider?,
             webSocketProvider: IWebSocketProvider?,
-            touchpadProvider: ITouchpadProvider?,
             sttProvider: ISttProvider?,
-            ledProvider: ILedProvider?
+            touchpadProvider: ITouchpadProvider?,
+            ledProvider: ILedProvider?,
+            handTrackingProvider: IHandTrackingProvider?
         ) {
             Log.d(TAG, "Registering system bridge services")
             this@BridgeService.httpProvider = httpProvider
             this@BridgeService.webSocketProvider = webSocketProvider
-            this@BridgeService.touchpadProvider = touchpadProvider
             this@BridgeService.sttProvider = sttProvider
-            this@BridgeService.ledProvider = ledProvider
 
-            registrationCount++
+            this@BridgeService.touchpadProvider = touchpadProvider
+            this@BridgeService.ledProvider = ledProvider
+            this@BridgeService.handTrackingProvider = handTrackingProvider
+
             sendBroadcastIfReady()
         }
 
@@ -69,7 +76,6 @@ class BridgeService {
             Log.d(TAG, "Registering settings service")
             this@BridgeService.settingsProvider = settingsProvider
 
-            registrationCount++
             sendBroadcastIfReady()
         }
 
@@ -77,13 +83,19 @@ class BridgeService {
             Log.d(TAG, "Registering shell service")
             this@BridgeService.shellProvider = shellProvider
 
-            registrationCount++
             sendBroadcastIfReady()
         }
     }
 
     fun sendBroadcastIfReady() {
-        if (registrationCount != 3) {
+        val isSystemBridgeReady = httpProvider != null
+        val isSettingsBridgeReady = settingsProvider != null
+        val isShellBridgeReady = shellProvider != null
+        if (!isSystemBridgeReady || !isSettingsBridgeReady || !isShellBridgeReady) {
+            Log.d(
+                TAG,
+                "Not all services registered yet. System bridge: $isSystemBridgeReady, settings bridge: $isSettingsBridgeReady, shell bridge: $isShellBridgeReady"
+            )
             return
         }
 
