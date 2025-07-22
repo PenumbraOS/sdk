@@ -10,7 +10,7 @@ class LedClient(private val ledProvider: ILedProvider) {
      * TODO: Non-functional
      */
     fun playAnimation(animation: LedAnimation) {
-        ledProvider.playAnimation(animation.intoIpc())
+        ledProvider.playAnimation(animation.enumValue)
     }
 
     /**
@@ -19,4 +19,8 @@ class LedClient(private val ledProvider: ILedProvider) {
     fun clearAllAnimation() {
         ledProvider.clearAllAnimation()
     }
+
+    // Status is not implemented and immediately throws an exception, hardcoded in the native code
+//    val status: LedStatus
+//        get() = ledProvider.status
 }

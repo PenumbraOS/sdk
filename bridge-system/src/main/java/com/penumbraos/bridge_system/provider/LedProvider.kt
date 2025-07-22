@@ -1,10 +1,10 @@
 package com.penumbraos.bridge_system.provider
 
 import android.content.Context
+import android.os.IBinder
 import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.ILedProvider
-import com.penumbraos.bridge.LedAnimationIpc
 import com.penumbraos.bridge_system.getApkClassLoader
 import java.lang.reflect.Method
 
@@ -16,13 +16,13 @@ class LedProvider(private val context: Context) : ILedProvider.Stub() {
     private lateinit var playAnimationMethod: Method
     private lateinit var clearAllAnimationMethod: Method
 
-    override fun playAnimation(animation: LedAnimationIpc) {
+    override fun playAnimation(animationId: Int) {
         connectService()
         if (pmcuService == null) {
             throw Error("Privacy MCU service not connected")
         }
 
-        playAnimationMethod.invoke(pmcuService, animation.enumValue)
+        playAnimationMethod.invoke(pmcuService, animationId)
     }
 
     override fun clearAllAnimation() {
@@ -52,7 +52,7 @@ class LedProvider(private val context: Context) : ILedProvider.Stub() {
             val iPrivacyMcuServiceStub =
                 notificationsClassLoader.loadClass("humane.pmcu.IPrivacyMcuService\$Stub")
             val asInterfaceMethod =
-                iPrivacyMcuServiceStub.getMethod("asInterface", android.os.IBinder::class.java)
+                iPrivacyMcuServiceStub.getMethod("asInterface", IBinder::class.java)
             pmcuService = asInterfaceMethod.invoke(null, binder)
             Log.d(TAG, "Connected to Privacy MCU service")
         } else {

@@ -1,7 +1,5 @@
 package com.penumbraos.sdk.api.types
 
-import com.penumbraos.bridge.LedAnimationIpc
-
 enum class LedAnimation(val enumValue: Int) {
     None(31),
     Video(1),
@@ -28,11 +26,5 @@ enum class LedAnimation(val enumValue: Int) {
                 null
             }
         }
-    }
-
-    fun intoIpc(): LedAnimationIpc {
-        val animation = LedAnimationIpc()
-        animation.enumValue = this.enumValue
-        return animation
     }
 }
