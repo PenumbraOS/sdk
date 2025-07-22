@@ -10,4 +10,12 @@ class HandTrackingClient(private val handTrackingProvider: IHandTrackingProvider
     fun stopTracking() {
         handTrackingProvider.triggerStop()
     }
+
+    fun acquireHATSLock() {
+        handTrackingProvider.acquireHATSLock()
+    }
+
+    fun releaseHATSLock() {
+        handTrackingProvider.releaseHATSLock()
+    }
 }

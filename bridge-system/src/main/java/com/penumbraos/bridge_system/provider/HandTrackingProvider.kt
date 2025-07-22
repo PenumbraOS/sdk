@@ -1,12 +1,12 @@
 package com.penumbraos.bridge_system.provider
 
 import android.content.Context
+import android.os.IBinder
 import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.IHandTrackingProvider
 import com.penumbraos.bridge_system.getApkClassLoader
 import java.lang.reflect.Method
-
 
 class HandTrackingProvider(context: Context) : IHandTrackingProvider.Stub() {
     val classLoader = getApkClassLoader(context, "humane.experience.systemnavigation")
@@ -19,7 +19,6 @@ class HandTrackingProvider(context: Context) : IHandTrackingProvider.Stub() {
         var flatHandService: Any? = null
         val triggerStartMethod: Method
         val triggerStopMethod: Method
-        val registerProjectableFlatHandCallbackMethod: Method
 
         constructor(classLoader: ClassLoader, service: Any) {
             this.classLoader = classLoader
@@ -27,13 +26,6 @@ class HandTrackingProvider(context: Context) : IHandTrackingProvider.Stub() {
 
             triggerStartMethod = service.javaClass.getMethod("triggerStart")
             triggerStopMethod = service.javaClass.getMethod("triggerStop")
-            val iHandTrackingCallbackClass =
-                classLoader.loadClass("humane.handtracking.IHandTrackingCallback")
-            registerProjectableFlatHandCallbackMethod =
-                service.javaClass.getMethod(
-                    "registerProjectableFlatHandCallback",
-                    iHandTrackingCallbackClass
-                )
         }
 
         fun triggerStart() {
@@ -54,30 +46,66 @@ class HandTrackingProvider(context: Context) : IHandTrackingProvider.Stub() {
         }
     }
 
-    var service: HandTrackingService? = null
+    class SystemModeService {
+        val classLoader: ClassLoader
+        val service: Any
 
-    override fun triggerStart() {
-        service().triggerStart()
+
+        constructor(classLoader: ClassLoader, service: Any) {
+            this.classLoader = classLoader
+            this.service = service
+        }
+
+        fun acquireHATSLock(binder: IBinder) {
+            service.javaClass.getMethod("acquireHATSLock", IBinder::class.java, String::class.java)
+                .invoke(service, binder, "HandTrackingProvider")
+        }
+
+        fun releaseHATSLock(binder: IBinder) {
+            service.javaClass.getMethod("releaseHATSLock", IBinder::class.java)
+                .invoke(service, binder)
+        }
     }
 
-    override fun triggerStop() {
-        service().triggerStop()
-    }
-
-    fun service(): HandTrackingService {
-        service?.let { return it }
-
+    val handTrackingService: HandTrackingService by lazy {
         val handTrackingBinder =
             ServiceManager.getService("humane.handtracking.IHandTrackingService")
         val iHandTrackingServiceClass =
             classLoader.loadClass("humane.handtracking.IHandTrackingService\$Stub")
         val asInterface =
-            iHandTrackingServiceClass.getMethod("asInterface", android.os.IBinder::class.java)
+            iHandTrackingServiceClass.getMethod("asInterface", IBinder::class.java)
         val handTrackingService = asInterface.invoke(null, handTrackingBinder)
 
         val newService = HandTrackingService(classLoader, handTrackingService as Any)
         newService.deactivateHandTracking()
-        service = newService
-        return newService
+        newService
+    }
+
+    val systemModeService: SystemModeService by lazy {
+        val systemModeBinder =
+            ServiceManager.getService("humane.service.SystemModeService")
+        val systemModeServiceClass =
+            classLoader.loadClass("humane.sysmode.ISystemModeService\$Stub")
+        val asInterface =
+            systemModeServiceClass.getMethod("asInterface", IBinder::class.java)
+        val systemModeService = asInterface.invoke(null, systemModeBinder)
+
+        SystemModeService(classLoader, systemModeService as Any)
+    }
+
+    override fun triggerStart() {
+        handTrackingService.triggerStart()
+    }
+
+    override fun triggerStop() {
+        handTrackingService.triggerStop()
+    }
+
+    override fun acquireHATSLock() {
+        systemModeService.acquireHATSLock(this.asBinder())
+    }
+
+    override fun releaseHATSLock() {
+        systemModeService.releaseHATSLock(this.asBinder())
     }
 }
