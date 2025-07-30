@@ -105,6 +105,9 @@ class PenumbraClient {
             val binder = getService.invoke(null, "nfc") as IBinder
             service = IBridge.Stub.asInterface(binder)
 
+            // If we're here, the bridge service connected
+            bridgeReadySignal.complete(Unit)
+
             val httpProvider = IHttpProvider.Stub.asInterface(service!!.getHttpProvider())
             val webSocketProvider =
                 IWebSocketProvider.Stub.asInterface(service!!.getWebSocketProvider())
