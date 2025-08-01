@@ -12,9 +12,11 @@ import com.penumbraos.bridge_system.provider.LedProvider
 import com.penumbraos.bridge_system.provider.SttProvider
 import com.penumbraos.bridge_system.provider.TouchpadProvider
 import com.penumbraos.bridge_system.provider.WebSocketProvider
+import com.penumbraos.bridge_system.util.OkHttpDnsResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 
 private const val TAG = "SystemBridgeService"
 
@@ -42,9 +44,10 @@ class Entrypoint {
                 try {
                     val bridge = connectToBridge(TAG, context)
                     Log.i(TAG, "Connected to bridge-core")
+                    val httpClient = OkHttpClient.Builder().dns(OkHttpDnsResolver()).build()
                     bridge.registerSystemService(
-                        HttpProvider(),
-                        WebSocketProvider(),
+                        HttpProvider(httpClient),
+                        WebSocketProvider(httpClient),
                         SttProvider(context, looper),
                         TouchpadProvider(looper),
                         LedProvider(context),

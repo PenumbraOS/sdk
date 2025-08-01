@@ -13,9 +13,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "WebSocketProvider"
 
-class WebSocketProvider : IWebSocketProvider.Stub() {
+class WebSocketProvider(private val client: OkHttpClient) : IWebSocketProvider.Stub() {
 
-    private val client = OkHttpClient()
     private val webSockets = ConcurrentHashMap<String, WebSocket>()
 
     override fun openWebSocket(

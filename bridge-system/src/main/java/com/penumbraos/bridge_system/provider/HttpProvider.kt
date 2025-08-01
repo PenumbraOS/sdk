@@ -13,10 +13,8 @@ import java.io.IOException
 
 private const val TAG = "HttpProvider"
 
-class HttpProvider : IHttpProvider.Stub() {
-
-    private val client = OkHttpClient()
-
+class HttpProvider(private val client: OkHttpClient) : IHttpProvider.Stub() {
+    
     override fun makeHttpRequest(
         requestId: String,
         url: String,

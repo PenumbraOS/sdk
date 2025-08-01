@@ -17,6 +17,7 @@ okhttp = "4.12.0"
 ktor = "3.0.0"
 systemJars = "70382bc"
 appprocessmocks = "3b869f2"
+dnsjava = "3.6.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -52,6 +53,7 @@ ktor-server-websockets = { group = "io.ktor", name = "ktor-server-websockets", v
 ktor-server-content-negotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 appprocessmocks = { group = "com.github.PenumbraOS", name = "app_process-mocks", version.ref = "appprocessmocks" }
+dnsjava = { group = "dnsjava", name = "dnsjava", version.ref = "dnsjava" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
