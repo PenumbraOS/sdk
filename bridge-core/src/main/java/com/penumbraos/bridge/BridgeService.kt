@@ -10,6 +10,8 @@ class BridgeService {
 
     private var httpProvider: IHttpProvider? = null
     private var webSocketProvider: IWebSocketProvider? = null
+    private var dnsProvider: IDnsProvider? = null
+
     private var sttProvider: ISttProvider? = null
 
     private var touchpadProvider: ITouchpadProvider? = null
@@ -18,7 +20,7 @@ class BridgeService {
 
     private var settingsProvider: ISettingsProvider? = null
     private var shellProvider: IShellProvider? = null
-    
+
     private val binder = object : IBridge.Stub() {
         override fun getHttpProvider(): IBinder? {
             return this@BridgeService.httpProvider?.asBinder()
@@ -26,6 +28,10 @@ class BridgeService {
 
         override fun getWebSocketProvider(): IBinder? {
             return this@BridgeService.webSocketProvider?.asBinder()
+        }
+
+        override fun getDnsProvider(): IBinder? {
+            return this@BridgeService.dnsProvider?.asBinder()
         }
 
         override fun getSttProvider(): IBinder? {
@@ -55,6 +61,7 @@ class BridgeService {
         override fun registerSystemService(
             httpProvider: IHttpProvider?,
             webSocketProvider: IWebSocketProvider?,
+            dnsProvider: IDnsProvider?,
             sttProvider: ISttProvider?,
             touchpadProvider: ITouchpadProvider?,
             ledProvider: ILedProvider?,
@@ -63,6 +70,8 @@ class BridgeService {
             Log.d(TAG, "Registering system bridge services")
             this@BridgeService.httpProvider = httpProvider
             this@BridgeService.webSocketProvider = webSocketProvider
+            this@BridgeService.dnsProvider = dnsProvider
+
             this@BridgeService.sttProvider = sttProvider
 
             this@BridgeService.touchpadProvider = touchpadProvider

@@ -2,6 +2,7 @@ package com.penumbraos.bridge;
 
 import com.penumbraos.bridge.IHttpProvider;
 import com.penumbraos.bridge.IWebSocketProvider;
+import com.penumbraos.bridge.IDnsProvider;
 import com.penumbraos.bridge.ISttProvider;
 import com.penumbraos.bridge.ITouchpadProvider;
 import com.penumbraos.bridge.ILedProvider;
@@ -12,6 +13,8 @@ import com.penumbraos.bridge.IShellProvider;
 interface IBridge {
     IBinder getHttpProvider();
     IBinder getWebSocketProvider();
+    IBinder getDnsProvider();
+
     IBinder getSttProvider();
 
     IBinder getTouchpadProvider();
@@ -20,7 +23,7 @@ interface IBridge {
 
     IBinder getSettingsProvider();
     IBinder getShellProvider();
-    void registerSystemService(IHttpProvider httpProvider, IWebSocketProvider webSocketProvider, ISttProvider sttProvider, ITouchpadProvider touchpadProvider, ILedProvider ledProvider, IHandTrackingProvider handTrackingProvider);
+    void registerSystemService(IHttpProvider httpProvider, IWebSocketProvider webSocketProvider, IDnsProvider dnsProvider, ISttProvider sttProvider, ITouchpadProvider touchpadProvider, ILedProvider ledProvider, IHandTrackingProvider handTrackingProvider);
     void registerSettingsService(ISettingsProvider settingsProvider);
     void registerShellService(IShellProvider shellProvider);
 }

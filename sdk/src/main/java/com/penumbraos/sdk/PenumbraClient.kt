@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
 import com.penumbraos.bridge.IBridge
+import com.penumbraos.bridge.IDnsProvider
 import com.penumbraos.bridge.IHandTrackingProvider
 import com.penumbraos.bridge.IHttpProvider
 import com.penumbraos.bridge.ILedProvider
@@ -17,6 +18,7 @@ import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
+import com.penumbraos.sdk.api.DnsClient
 import com.penumbraos.sdk.api.HandTrackingClient
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.LedClient
@@ -39,6 +41,8 @@ class PenumbraClient {
 
     lateinit var http: HttpClient
     lateinit var websocket: WebSocketClient
+    lateinit var dns: DnsClient
+
     val stt: SttClient = SttClient()
 
     lateinit var touchpad: TouchpadClient
@@ -48,9 +52,11 @@ class PenumbraClient {
     lateinit var settings: SettingsClient
     lateinit var shell: ShellClient
 
-    constructor(context: Context) {
+    constructor(context: Context, disableBroadcastListener: Boolean = false) {
         this.context = context
-        registerBroadcastListener()
+        if (!disableBroadcastListener) {
+            registerBroadcastListener()
+        }
         try {
             this.initialize()
         } catch (_: Exception) {
@@ -108,6 +114,8 @@ class PenumbraClient {
             val httpProvider = IHttpProvider.Stub.asInterface(service!!.getHttpProvider())
             val webSocketProvider =
                 IWebSocketProvider.Stub.asInterface(service!!.getWebSocketProvider())
+            val dnsProvider = IDnsProvider.Stub.asInterface(service!!.getDnsProvider())
+
             val sttProvider = ISttProvider.Stub.asInterface(service!!.getSttProvider())
 
             val touchpadProvider =
@@ -124,6 +132,8 @@ class PenumbraClient {
 
             http = HttpClient(httpProvider)
             websocket = WebSocketClient(webSocketProvider)
+            dns = DnsClient(dnsProvider)
+
             stt.provider = sttProvider
 
             touchpad = TouchpadClient(touchpadProvider)

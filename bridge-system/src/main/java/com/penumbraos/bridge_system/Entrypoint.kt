@@ -6,6 +6,7 @@ import android.os.Looper
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.bridge.external.connectToBridge
+import com.penumbraos.bridge_system.provider.DnsProvider
 import com.penumbraos.bridge_system.provider.HandTrackingProvider
 import com.penumbraos.bridge_system.provider.HttpProvider
 import com.penumbraos.bridge_system.provider.LedProvider
@@ -44,10 +45,12 @@ class Entrypoint {
                 try {
                     val bridge = connectToBridge(TAG, context)
                     Log.i(TAG, "Connected to bridge-core")
-                    val httpClient = OkHttpClient.Builder().dns(OkHttpDnsResolver()).build()
+                    val dnsResolver = OkHttpDnsResolver()
+                    val httpClient = OkHttpClient.Builder().dns(dnsResolver).build()
                     bridge.registerSystemService(
                         HttpProvider(httpClient),
                         WebSocketProvider(httpClient),
+                        DnsProvider(dnsResolver),
                         SttProvider(context, looper),
                         TouchpadProvider(looper),
                         LedProvider(context),
