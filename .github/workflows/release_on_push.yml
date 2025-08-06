@@ -1,0 +1,79 @@
+name: Release on Push
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Release APKs
+        run: ./gradlew :bridge-core:assembleRelease :bridge-system:assembleRelease :bridge-shell:assembleRelease :bridge-settings:assembleRelease
+
+      - name: Rename APK files
+        run: |
+          # Create release artifacts directory
+          mkdir -p release-artifacts
+
+          # Rename actual APKs
+          cp bridge-core/build/outputs/apk/release/bridge-core-release-unsigned.apk release-artifacts/SDK-Bridge-Core.apk
+          cp bridge-system/build/outputs/apk/release/bridge-system-release-unsigned.apk release-artifacts/SDK-Bridge-System.apk
+          cp bridge-shell/build/outputs/apk/release/bridge-shell-release-unsigned.apk release-artifacts/SDK-Bridge-Shell.apk
+          cp bridge-settings/build/outputs/apk/release/bridge-settings-release-unsigned.apk release-artifacts/SDK-Bridge-Settings.apk
+
+      - name: Generate version tag
+        id: version
+        run: |
+          TODAY=$(date +'%Y-%m-%d')
+
+          # Get all existing releases for today (fetch more to avoid pagination issues)
+          EXISTING=$(gh release list --limit 100 --json tagName --jq '.[].tagName' | grep "^${TODAY}\." || echo "")
+
+          if [ -z "$EXISTING" ]; then
+            # No releases today, start with .0
+            BUILD_NUM=0
+          else
+            # Find highest build number for today
+            BUILD_NUM=$(echo "$EXISTING" | sed "s/^${TODAY}\.//" | sort -n | tail -1)
+            BUILD_NUM=$((BUILD_NUM + 1))
+          fi
+
+          echo "Existing releases for ${TODAY}: $EXISTING"
+          echo "Next build number: $BUILD_NUM"
+
+          VERSION="${TODAY}.${BUILD_NUM}"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+          echo "Generated version: $VERSION"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Alpha ${{ steps.version.outputs.tag }}
+          prerelease: true
+          generate_release_notes: true
+          files: release-artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
