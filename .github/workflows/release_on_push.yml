@@ -36,10 +36,10 @@ jobs:
           mkdir -p release-artifacts
 
           # Rename actual APKs
-          cp bridge-core/build/outputs/apk/release/bridge-core-release-unsigned.apk release-artifacts/SDK-Bridge-Core.apk
-          cp bridge-system/build/outputs/apk/release/bridge-system-release-unsigned.apk release-artifacts/SDK-Bridge-System.apk
-          cp bridge-shell/build/outputs/apk/release/bridge-shell-release-unsigned.apk release-artifacts/SDK-Bridge-Shell.apk
-          cp bridge-settings/build/outputs/apk/release/bridge-settings-release-unsigned.apk release-artifacts/SDK-Bridge-Settings.apk
+          cp bridge-core/build/outputs/apk/release/bridge-core-release.apk release-artifacts/SDK-Bridge-Core.apk
+          cp bridge-system/build/outputs/apk/release/bridge-system-release.apk release-artifacts/SDK-Bridge-System.apk
+          cp bridge-shell/build/outputs/apk/release/bridge-shell-release.apk release-artifacts/SDK-Bridge-Shell.apk
+          cp bridge-settings/build/outputs/apk/release/bridge-settings-release.apk release-artifacts/SDK-Bridge-Settings.apk
 
       - name: Generate version tag
         id: version
