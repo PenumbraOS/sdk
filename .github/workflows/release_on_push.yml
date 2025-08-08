@@ -27,6 +27,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Build Settings UI
+        run: |
+          cd bridge-settings/react-app
+          npm i
+          npm run build:android
+
       - name: Build Release APKs
         run: ./gradlew :bridge-core:assembleRelease :bridge-system:assembleRelease :bridge-shell:assembleRelease :bridge-settings:assembleRelease
 
