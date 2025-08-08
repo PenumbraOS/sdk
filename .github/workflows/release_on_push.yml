@@ -33,6 +33,19 @@ jobs:
           npm i
           npm run build:android
 
+      - name: Build eSIM Frida Setup
+        run: |
+          cd frida
+          npm i
+          npm run build
+          cd ..
+          cp frida/dist/index.js bridge-system/src/main/jniLibs/arm64-v8a/libgadget.script.so
+
+      - name: Download Frida Gadget
+        run: |
+          curl -L -o bridge-system/src/main/jniLibs/arm64-v8a/libgadget.so.xz https://github.com/frida/frida/releases/download/16.7.19/frida-gadget-16.7.19-android-arm64.so.xz
+          xz --force --decompress bridge-system/src/main/jniLibs/arm64-v8a/libgadget.so.xz
+
       - name: Build Release APKs
         run: ./gradlew :bridge-core:assembleRelease :bridge-system:assembleRelease :bridge-shell:assembleRelease :bridge-settings:assembleRelease
 

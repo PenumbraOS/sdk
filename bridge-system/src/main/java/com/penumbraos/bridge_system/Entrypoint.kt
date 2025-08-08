@@ -38,7 +38,6 @@ class Entrypoint {
                 DexClassLoader(LPA_APK_PATH, null, null, ClassLoader.getSystemClassLoader())
 
             val activityThread = Common.initialize(ClassLoader.getSystemClassLoader())
-            val activityThreadClass = classLoader.loadClass("android.app.ActivityThread")
             val context =
                 MockContext.createWithAppContext(
                     classLoader,
@@ -49,14 +48,7 @@ class Entrypoint {
             // Prepare context for eSIM operations
             context.setSharedPreferences("Prefs", CustomSharedPreferences())
             context.mockResources = MockFactoryService.createResources(LPA_APK_PATH)
-
-            Looper.prepareMainLooper()
-
-            // Set up process under ActivityThread as a kind of Zygote process
-            val initializeMainlineModulesMethod =
-                activityThreadClass.getDeclaredMethod("initializeMainlineModules")
-            initializeMainlineModulesMethod.isAccessible = true
-            initializeMainlineModulesMethod.invoke(null)
+            context.mockApplicationContext = context
 
             val looper = Looper.getMainLooper()
 

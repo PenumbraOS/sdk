@@ -45,6 +45,15 @@ android {
             }
         }
     }
+    packaging {
+        jniLibs {
+            // Required for binary to be accessible
+            useLegacyPackaging = true
+
+            keepDebugSymbols += "**/libgadget.config.so"
+            keepDebugSymbols += "**/libgadget.script.so"
+        }
+    }
 }
 
 dependencies {

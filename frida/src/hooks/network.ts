@@ -1,21 +1,22 @@
 import { log } from "../utils/logging";
 
-let penumbraClient: any = null;
+let dnsProvider: any = null;
 
 export const setupNetworkHooks = (): void => {
   try {
     const InetAddress = Java.use("java.net.InetAddress");
 
     const getDns = (hostname: string): string => {
-      return penumbraClient.dns.value.lookup
+      // TODO: Something about this is incorrect
+      return dnsProvider.lookup
         .overload("java.lang.String")
-        .call(penumbraClient.dns.value, hostname);
+        .call(dnsProvider, hostname);
     };
 
     const hookDnsMethod = (method: any) => {
       const original = method.implementation;
       method.implementation = function (hostname: string) {
-        if (penumbraClient) {
+        if (dnsProvider) {
           const resolvedHostname = getDns(hostname);
           return original.call(this, resolvedHostname);
         }
@@ -30,6 +31,6 @@ export const setupNetworkHooks = (): void => {
   }
 };
 
-export const setPenumbraClient = (client: any): void => {
-  penumbraClient = client;
+export const setDnsProvider = (provider: any): void => {
+  dnsProvider = provider;
 };

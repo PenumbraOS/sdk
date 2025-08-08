@@ -17,7 +17,7 @@ const notifyJavaCallback = (
   Java.scheduleOnMainThread(() => {
     try {
       const MockFactoryService = loadClass(
-        "com.penumbraos.esim.MockFactoryService"
+        "com.penumbraos.bridge_system.esim.MockFactoryService"
       );
       const instance = MockFactoryService.fridaCallbackInstance.value;
       if (instance) {

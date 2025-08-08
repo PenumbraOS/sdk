@@ -17,8 +17,10 @@ import com.penumbraos.bridge.IShellProvider
 import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
+import com.penumbraos.bridge.IEsimProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.DnsClient
+import com.penumbraos.sdk.api.EsimClient
 import com.penumbraos.sdk.api.HandTrackingClient
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.LedClient
@@ -48,6 +50,8 @@ class PenumbraClient {
     lateinit var touchpad: TouchpadClient
     lateinit var led: LedClient
     lateinit var handTracking: HandTrackingClient
+
+    lateinit var esim: EsimClient
 
     lateinit var settings: SettingsClient
     lateinit var shell: ShellClient
@@ -124,6 +128,9 @@ class PenumbraClient {
             val handTrackingProvider =
                 IHandTrackingProvider.Stub.asInterface(service!!.getHandTrackingProvider())
 
+            val esimProvider = 
+                IEsimProvider.Stub.asInterface(service!!.getEsimProvider())
+
             val settingsProvider =
                 ISettingsProvider.Stub.asInterface(service!!.getSettingsProvider())
 
@@ -139,6 +146,8 @@ class PenumbraClient {
             touchpad = TouchpadClient(touchpadProvider)
             led = LedClient(ledProvider)
             handTracking = HandTrackingClient(handTrackingProvider)
+
+            esim = EsimClient(esimProvider)
 
             settings = SettingsClient(settingsProvider)
             shell = ShellClient(shellProvider)

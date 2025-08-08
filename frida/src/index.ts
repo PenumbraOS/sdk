@@ -1,16 +1,16 @@
 import { chooseLiveClasses } from "./utils/classloader";
-import { setupNetworkHooks, setPenumbraClient } from "./hooks/network";
+import { setupNetworkHooks, setDnsProvider } from "./hooks/network";
 import { setupCliCallbackHooks } from "./hooks/cli-callbacks";
 
 const initialize = (): void => {
   setupNetworkHooks();
   setupCliCallbackHooks();
 
-  const penumbraClientInstances = chooseLiveClasses(
-    "com.penumbraos.sdk.PenumbraClient"
+  const dnsProviderInstances = chooseLiveClasses(
+    "com.penumbraos.bridge_system.provider.DnsProvider"
   );
-  if (penumbraClientInstances.length > 0) {
-    setPenumbraClient(penumbraClientInstances[0]);
+  if (dnsProviderInstances.length > 0) {
+    setDnsProvider(dnsProviderInstances[0]);
   }
 };
 
