@@ -1,8 +1,8 @@
 package com.penumbraos.bridge_settings
 
-import MockContext
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
+import com.penumbraos.appprocessmocks.MockContext
 import com.penumbraos.bridge.IShellProvider
 import com.penumbraos.bridge.external.connectToBridge
 import com.penumbraos.bridge.external.waitForBridgeShell

@@ -1,10 +1,10 @@
 package com.penumbraos.bridge_shell
 
-import MockContext
 import android.annotation.SuppressLint
 import android.os.Looper
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
+import com.penumbraos.appprocessmocks.MockContext
 import com.penumbraos.bridge.external.connectToBridge
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,10 +36,10 @@ class Entrypoint {
                 try {
                     val bridge = connectToBridge(TAG, context)
                     Log.i(TAG, "Connected to bridge-core")
-                    
+
                     val shellProvider = ShellProvider()
                     bridge.registerShellService(shellProvider)
-                    
+
                     Log.w(TAG, "Registered shell bridge")
                 } catch (e: Exception) {
                     Log.e(TAG, "Error starting shell bridge", e)

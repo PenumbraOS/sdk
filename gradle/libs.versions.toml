@@ -16,7 +16,7 @@ robolectric = "4.14"
 okhttp = "4.12.0"
 ktor = "3.0.0"
 systemJars = "70382bc"
-appprocessmocks = "3b869f2"
+appprocessmocks = "2af582c"
 dnsjava = "3.6.3"
 
 [libraries]
@@ -40,7 +40,7 @@ mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinx" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinx" }
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "kotlinx" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx" }
 kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version = "0.6.0" }
 androidx-core-testing = { group = "androidx.arch.core", name = "core-testing", version = "2.2.0" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }

@@ -1,12 +1,16 @@
 package com.penumbraos.bridge_system
 
-import MockContext
 import android.annotation.SuppressLint
 import android.os.Looper
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
+import com.penumbraos.appprocessmocks.MockContext
 import com.penumbraos.bridge.external.connectToBridge
+import com.penumbraos.bridge_system.esim.CustomSharedPreferences
+import com.penumbraos.bridge_system.esim.LPA_APK_PATH
+import com.penumbraos.bridge_system.esim.MockFactoryService
 import com.penumbraos.bridge_system.provider.DnsProvider
+import com.penumbraos.bridge_system.provider.EsimProvider
 import com.penumbraos.bridge_system.provider.HandTrackingProvider
 import com.penumbraos.bridge_system.provider.HttpProvider
 import com.penumbraos.bridge_system.provider.LedProvider
@@ -14,6 +18,7 @@ import com.penumbraos.bridge_system.provider.SttProvider
 import com.penumbraos.bridge_system.provider.TouchpadProvider
 import com.penumbraos.bridge_system.provider.WebSocketProvider
 import com.penumbraos.bridge_system.util.OkHttpDnsResolver
+import dalvik.system.DexClassLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,17 +26,37 @@ import okhttp3.OkHttpClient
 
 private const val TAG = "SystemBridgeService"
 
+@Suppress("DEPRECATION")
 @SuppressLint("DiscouragedPrivateApi", "PrivateApi")
 class Entrypoint {
     companion object {
-        @SuppressLint("UnspecifiedRegisterReceiverFlag")
+        @SuppressLint("UnspecifiedRegisterReceiverFlag", "BlockedPrivateApi")
         @JvmStatic
         fun main(args: Array<String>) {
             Log.w(TAG, "Starting bridge")
-            val classLoader = ClassLoader.getSystemClassLoader()
-            val thread = Common.initialize(ClassLoader.getSystemClassLoader())
+            val classLoader =
+                DexClassLoader(LPA_APK_PATH, null, null, ClassLoader.getSystemClassLoader())
+
+            val activityThread = Common.initialize(ClassLoader.getSystemClassLoader())
+            val activityThreadClass = classLoader.loadClass("android.app.ActivityThread")
             val context =
-                MockContext.createWithAppContext(classLoader, thread, "com.android.settings")
+                MockContext.createWithAppContext(
+                    classLoader,
+                    activityThread,
+                    "com.android.settings"
+                )
+
+            // Prepare context for eSIM operations
+            context.setSharedPreferences("Prefs", CustomSharedPreferences())
+            context.mockResources = MockFactoryService.createResources(LPA_APK_PATH)
+
+            Looper.prepareMainLooper()
+
+            // Set up process under ActivityThread as a kind of Zygote process
+            val initializeMainlineModulesMethod =
+                activityThreadClass.getDeclaredMethod("initializeMainlineModules")
+            initializeMainlineModulesMethod.isAccessible = true
+            initializeMainlineModulesMethod.invoke(null)
 
             val looper = Looper.getMainLooper()
 
@@ -54,7 +79,8 @@ class Entrypoint {
                         SttProvider(context, looper),
                         TouchpadProvider(looper),
                         LedProvider(context),
-                        HandTrackingProvider(context)
+                        HandTrackingProvider(context),
+                        EsimProvider(classLoader, context)
                     )
                     Log.w(TAG, "Registered system bridge")
                 } catch (e: Exception) {

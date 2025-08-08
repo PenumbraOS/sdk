@@ -1,4 +1,4 @@
-package com.penumbraos.esim
+package com.penumbraos.bridge_system.esim
 
 import kotlinx.serialization.Serializable
 
@@ -14,7 +14,7 @@ data class ProfileData(
     val isDisabled: Boolean = false
 ) {
     fun isActive(): Boolean = isEnabled
-    
+
     fun getDisplayName(): String {
         return when {
             profileNickname.isNotBlank() -> profileNickname
@@ -23,7 +23,7 @@ data class ProfileData(
             else -> "Unknown Profile"
         }
     }
-    
+
     override fun toString(): String {
         return "Profile(${getDisplayName()}, $profileState, $iccid)"
     }

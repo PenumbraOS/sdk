@@ -1,4 +1,4 @@
-package com.penumbraos.esim
+package com.penumbraos.bridge_system.esim
 
 import android.content.SharedPreferences
 import android.util.Log

@@ -1,4 +1,4 @@
-package com.penumbraos.esim
+package com.penumbraos.bridge_system.esim
 
 /**
  * Interface for handling callbacks from Frida when CLI operations complete
@@ -11,5 +11,10 @@ interface FridaCallbackHandler {
      * @param result The result string from the operation
      * @param isError Whether this represents an error condition
      */
-    fun onFridaCallback(operationType: String, operationName: String, result: String, isError: Boolean)
+    fun onFridaCallback(
+        operationType: String,
+        operationName: String,
+        result: String,
+        isError: Boolean
+    )
 }
