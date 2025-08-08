@@ -1,0 +1,20 @@
+{
+  "name": "esim-frida-injections",
+  "version": "1.0.0",
+  "description": "",
+  "author": "agg23",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c --watch",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@types/node": "^24.2.0",
+    "rollup": "^4.46.2",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.2"
+  },
+  "license": "MIT"
+}
