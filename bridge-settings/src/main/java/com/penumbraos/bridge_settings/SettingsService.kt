@@ -3,9 +3,12 @@ package com.penumbraos.bridge_settings
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.appprocessmocks.MockContext
+import com.penumbraos.bridge.IEsimProvider
 import com.penumbraos.bridge.IShellProvider
 import com.penumbraos.bridge.external.connectToBridge
 import com.penumbraos.bridge.external.waitForBridgeShell
+import com.penumbraos.bridge.external.waitForBridgeSystem
+import com.penumbraos.sdk.api.EsimClient
 import com.penumbraos.sdk.api.ShellClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -19,6 +22,7 @@ class SettingsService {
     private lateinit var settingsRegistry: SettingsRegistry
     private lateinit var webServer: SettingsWebServer
     private lateinit var settingsProvider: SettingsProvider
+    private lateinit var esimProvider: ESimSettingsProvider
 
     fun start() {
         Log.i(TAG, "Starting Settings Service")
@@ -55,6 +59,22 @@ class SettingsService {
                 settingsRegistry.setWebServer(webServer)
 
                 webServer.start()
+
+                waitForBridgeSystem(TAG, bridge)
+
+                try {
+                    val esimProviderInterface = IEsimProvider.Stub.asInterface(bridge.esimProvider)
+                    if (esimProviderInterface != null) {
+                        val esimClient = EsimClient(esimProviderInterface)
+                        esimProvider = ESimSettingsProvider(esimClient, settingsRegistry)
+                        settingsRegistry.registerActionProvider("esim", esimProvider)
+                        Log.i(TAG, "Registered eSIM action provider")
+                    } else {
+                        Log.e(TAG, "eSIM provider not available or failed to initialize")
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "eSIM provider not available or failed to initialize", e)
+                }
             }
 
             Log.i(TAG, "Settings Service started successfully")

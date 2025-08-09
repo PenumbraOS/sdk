@@ -315,3 +315,334 @@ input[type="range"]::-moz-range-thumb {
   font-family: monospace;
   font-weight: bold;
 }
+
+/* eSIM Settings Styles */
+.esim-description {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #5d6d7e;
+}
+
+.action-group {
+  margin-bottom: 24px;
+}
+
+.action-group h3 {
+  color: #2c3e50;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 8px;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+/* Action Button Styles */
+.action-button-container {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e1e8ed;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.action-button-container:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-header {
+  padding: 16px;
+  border-bottom: 1px solid #f0f3f5;
+}
+
+.action-button {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  transition: background-color 0.2s ease;
+}
+
+.action-button:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.action-button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.action-button.executing {
+  background: #f39c12;
+}
+
+.action-description {
+  display: block;
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Parameter Form Styles */
+.parameter-form {
+  padding: 16px;
+  background: #f8f9fa;
+  border-top: 1px solid #e1e8ed;
+}
+
+.parameter-form h4 {
+  margin-bottom: 12px;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.parameter-input {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.parameter-label {
+  font-size: 14px;
+  color: #2c3e50;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.parameter-label .required {
+  color: #e74c3c;
+  margin-left: 4px;
+}
+
+.parameter-input input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.parameter-input input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.parameter-description {
+  font-size: 12px;
+  color: #7f8c8d;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.parameter-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.execute-with-params, .cancel-params {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.execute-with-params {
+  background: #27ae60;
+  color: white;
+}
+
+.execute-with-params:hover:not(:disabled) {
+  background: #229954;
+}
+
+.execute-with-params:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.cancel-params {
+  background: #ecf0f1;
+  color: #2c3e50;
+}
+
+.cancel-params:hover {
+  background: #d5dbdb;
+}
+
+/* Action Result Styles */
+.action-result {
+  padding: 16px;
+  border-top: 1px solid #e1e8ed;
+  margin-top: 16px;
+}
+
+.action-result.success {
+  background: rgba(46, 204, 113, 0.1);
+  border-left: 4px solid #2ecc71;
+}
+
+.action-result.error {
+  background: rgba(231, 76, 60, 0.1);
+  border-left: 4px solid #e74c3c;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.result-status {
+  font-size: 18px;
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.result-status.success {
+  color: #2ecc71;
+}
+
+.result-status.error {
+  color: #e74c3c;
+}
+
+.result-message {
+  flex: 1;
+  font-size: 14px;
+  color: #2c3e50;
+}
+
+.result-data {
+  margin-bottom: 16px;
+}
+
+.result-data h4 {
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.result-data pre {
+  background: #f8f9fa;
+  border: 1px solid #e1e8ed;
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 12px;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Action Logs Styles */
+.action-logs {
+  margin-top: 16px;
+}
+
+.action-logs h4 {
+  margin-bottom: 8px;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+.log-entries {
+  background: #2c3e50;
+  border-radius: 4px;
+  padding: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.log-entry {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  font-family: monospace;
+  font-size: 12px;
+  color: #ecf0f1;
+}
+
+.log-timestamp {
+  margin-right: 8px;
+  color: #95a5a6;
+  min-width: 80px;
+}
+
+.log-level {
+  margin-right: 8px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 50px;
+  text-align: center;
+}
+
+.log-level.log-info {
+  background: #3498db;
+  color: white;
+}
+
+.log-level.log-warning {
+  background: #f39c12;
+  color: white;
+}
+
+.log-level.log-error {
+  background: #e74c3c;
+  color: white;
+}
+
+.log-level.log-debug {
+  background: #95a5a6;
+  color: white;
+}
+
+.log-message {
+  flex: 1;
+}
+
+/* eSIM Help Styles */
+.esim-help {
+  margin-top: 24px;
+  padding: 16px;
+  background: #f0f9ff;
+  border-left: 4px solid #3498db;
+  border-radius: 0 6px 6px 0;
+}
+
+.esim-help h4 {
+  color: #2c3e50;
+  margin-bottom: 12px;
+  font-size: 1rem;
+}
+
+.esim-help ul {
+  margin-left: 20px;
+}
+
+.esim-help li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #34495e;
+  line-height: 1.5;
+}
+
+.esim-help strong {
+  color: #2c3e50;
+}

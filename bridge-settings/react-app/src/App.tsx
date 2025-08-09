@@ -4,9 +4,10 @@ import SystemStatus from "./components/SystemStatus";
 import SystemSettings from "./components/SystemSettings";
 import AppSettings from "./components/AppSettings";
 import MABLStatus from "./components/MABLStatus";
+import ESimSettings from "./components/ESimSettings";
 
 function App() {
-  const { loading, error, connected } = useSettings();
+  const { loading, error, connected, executeAction, actionResults } = useSettings();
 
   if (loading) {
     return (
@@ -35,6 +36,7 @@ function App() {
             <SystemSettings />
             <AppSettings />
             <MABLStatus />
+            <ESimSettings onExecuteAction={executeAction} actionResults={actionResults} />
           </div>
         </>
       )}

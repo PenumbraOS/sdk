@@ -144,6 +144,18 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
         }
     }
 
+    override fun executeAction(appId: String, action: String, params: Map<*, *>) {
+        providerScope.launch {
+            try {
+                val convertedParams = convertMapPayload(params)
+                settingsRegistry.executeAction(appId, action, convertedParams)
+                Log.i(TAG, "Executed action: $appId.$action")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error executing action: $appId.$action", e)
+            }
+        }
+    }
+
     private fun convertSchemaToDefinitions(schema: Map<*, *>): Map<String, SettingDefinition> {
         val definitions = mutableMapOf<String, SettingDefinition>()
 
@@ -181,6 +193,7 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
             SettingType.INTEGER -> 0
             SettingType.STRING -> ""
             SettingType.FLOAT -> 0.0f
+            SettingType.ACTION -> "Action"
         }
     }
 

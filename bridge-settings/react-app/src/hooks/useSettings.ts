@@ -1,82 +1,134 @@
-import { useState, useEffect } from 'react';
-import { useWebSocketMessages, useWebSocket } from './useWebSocket';
-import { SystemStatus } from '../types/settings';
+import { useState, useEffect } from "react";
+import { useWebSocketMessages, useWebSocket } from "./useWebSocket";
+import { SystemStatus, ActionResult } from "../types/settings";
 
 export function useSettings() {
-  const [allSettings, setAllSettings] = useState<Record<string, Record<string, unknown>>>({});
+  const [allSettings, setAllSettings] = useState<
+    Record<string, Record<string, unknown>>
+  >({});
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [actionResults, setActionResults] = useState<
+    Record<string, ActionResult>
+  >({});
+
   const { lastMessage } = useWebSocketMessages();
-  const { updateSetting, connectionState } = useWebSocket();
+  const { updateSetting, executeAction, connectionState } = useWebSocket();
 
   useEffect(() => {
     if (!lastMessage) return;
 
     switch (lastMessage.type) {
-      case 'allSettings':
+      case "allSettings":
         setAllSettings(lastMessage.settings);
         setLoading(false);
         break;
-        
-      case 'settingChanged':
-        setAllSettings(prev => ({
+
+      case "settingChanged":
+        setAllSettings((prev) => ({
           ...prev,
           [lastMessage.category]: {
             ...prev[lastMessage.category],
-            [lastMessage.key]: lastMessage.value
-          }
+            [lastMessage.key]: lastMessage.value,
+          },
         }));
         break;
-        
-      case 'statusUpdate':
-        if (lastMessage.statusType === 'battery') {
-          setSystemStatus(prev => ({
+
+      case "statusUpdate":
+        if (lastMessage.statusType === "battery") {
+          setSystemStatus((prev) => ({
             ...prev,
             battery: {
               level: Number(lastMessage.data.level) || 0,
               charging: Boolean(lastMessage.data.charging),
-              powerSaveMode: Boolean(lastMessage.data.powerSaveMode)
-            }
+              powerSaveMode: Boolean(lastMessage.data.powerSaveMode),
+            },
           }));
-        } else if (lastMessage.statusType === 'display') {
-          setSystemStatus(prev => ({
+        } else if (lastMessage.statusType === "display") {
+          setSystemStatus((prev) => ({
             ...prev,
             display: {
               brightness: Number(lastMessage.data.brightness) || 50,
-              autoBrightness: Boolean(lastMessage.data.autoBrightness)
-            }
+              autoBrightness: Boolean(lastMessage.data.autoBrightness),
+            },
           }));
-        } else if (lastMessage.statusType === 'audio') {
-          setSystemStatus(prev => ({
+        } else if (lastMessage.statusType === "audio") {
+          setSystemStatus((prev) => ({
             ...prev,
             audio: {
               volume: Number(lastMessage.data.volume) || 50,
-              muted: Boolean(lastMessage.data.muted)
-            }
+              muted: Boolean(lastMessage.data.muted),
+            },
           }));
-        } else if (lastMessage.statusType === 'network') {
-          setSystemStatus(prev => ({
+        } else if (lastMessage.statusType === "network") {
+          setSystemStatus((prev) => ({
             ...prev,
             network: {
-              wifiEnabled: Boolean(lastMessage.data.wifiEnabled)
-            }
+              wifiEnabled: Boolean(lastMessage.data.wifiEnabled),
+            },
           }));
         }
         break;
-        
-      case 'error':
+
+      case "actionResult":
+        console.log(
+          `Action result for ${lastMessage.appId}.${lastMessage.action}:`,
+          lastMessage
+        );
+        const actionKey = `${lastMessage.appId}.${lastMessage.action}`;
+        setActionResults((prev) => ({
+          ...prev,
+          [actionKey]: {
+            success: lastMessage.success,
+            message: lastMessage.message,
+            data: lastMessage.data,
+            logs: lastMessage.logs,
+          },
+        }));
+        break;
+
+      case "appEvent":
+        console.log(`App event from ${lastMessage.appId}:`, lastMessage);
+        if (lastMessage.eventType === "actionResult" && lastMessage.payload) {
+          const payload = lastMessage.payload as any;
+          const actionKey = `${lastMessage.appId}.${payload.action}`;
+          setActionResults((prev) => ({
+            ...prev,
+            [actionKey]: {
+              success: payload.success,
+              message: payload.message,
+              data: payload.data,
+              logs: Array.isArray(payload.logs) ? payload.logs : [],
+            },
+          }));
+        }
+        break;
+
+      case "actionsRegistered":
+        console.log(
+          `Actions registered for ${lastMessage.appId}:`,
+          lastMessage.actions
+        );
+        // Action definitions could be stored globally for dynamic UI generation
+        break;
+
+      case "error":
         setError(lastMessage.message);
         break;
     }
   }, [lastMessage]);
 
   const updateSystemSetting = (key: string, value: unknown) => {
-    updateSetting('system', key, value);
+    updateSetting("system", key, value);
   };
 
-  const updateAppSetting = (appId: string, category: string, key: string, value: unknown) => {
+  const updateAppSetting = (
+    appId: string,
+    category: string,
+    key: string,
+    value: unknown
+  ) => {
     updateSetting(`${appId}.${category}`, key, value);
   };
 
@@ -100,9 +152,11 @@ export function useSettings() {
     loading,
     error,
     connected: connectionState.connected,
+    actionResults,
     updateSystemSetting,
     updateAppSetting,
     getSystemSettings,
-    getAppSettings
+    getAppSettings,
+    executeAction,
   };
 }

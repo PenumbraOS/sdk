@@ -120,6 +120,16 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
             Log.e(TAG, "Failed to send event: $appId.$eventType", e)
         }
     }
+
+    suspend fun executeAction(appId: String, action: String, params: Map<String, Any>): Boolean {
+        return try {
+            settingsProvider.executeAction(appId, action, params)
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to execute action: $appId.$action", e)
+            false
+        }
+    }
 }
 
 class SettingsCategoryBuilder {
@@ -181,6 +191,23 @@ class SettingsCategory {
         )
     }
 
+    fun actionSetting(
+        key: String,
+        displayText: String,
+        parameters: List<String>? = null,
+        description: String? = null
+    ) {
+        val validation = mutableMapOf<String, Any>()
+        validation["displayText"] = displayText
+        parameters?.let { validation["parameters"] = it }
+        description?.let { validation["description"] = it }
+
+        settings[key] = SettingDefinition(
+            key, SettingType.ACTION, displayText,
+            validation.ifEmpty { null }
+        )
+    }
+
     internal fun toSchemaMap(): Map<String, Map<String, Any>> {
         return settings.mapValues { (_, definition) ->
             val schema = mutableMapOf<String, Any>(
@@ -201,7 +228,7 @@ data class SettingDefinition(
 )
 
 enum class SettingType {
-    BOOLEAN, INTEGER, STRING, FLOAT
+    BOOLEAN, INTEGER, STRING, FLOAT, ACTION
 }
 
 class SettingsException(message: String) : Exception(message)

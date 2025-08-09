@@ -134,6 +134,15 @@ export class WebSocketService {
     });
   }
 
+  executeAction(appId: string, action: string, params: Record<string, unknown>): void {
+    this.send({
+      type: "executeAction",
+      appId,
+      action,
+      params,
+    });
+  }
+
   onConnectionStateChange(
     listener: (state: ConnectionState) => void
   ): () => void {

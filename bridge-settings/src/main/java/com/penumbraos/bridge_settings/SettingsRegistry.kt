@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
@@ -27,6 +26,43 @@ import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "SettingsRegistry"
 
+data class ActionResult(
+    val success: Boolean,
+    val message: String? = null,
+    val data: Map<String, Any?>? = null,
+    val logs: List<LogEntry>? = null
+)
+
+data class LogEntry(
+    val timestamp: Long = System.currentTimeMillis(),
+    val level: LogLevel,
+    val message: String
+)
+
+enum class LogLevel {
+    INFO, WARNING, ERROR, DEBUG
+}
+
+interface SettingsActionProvider {
+    suspend fun executeAction(action: String, params: Map<String, Any>): ActionResult
+    fun getActionDefinitions(): Map<String, ActionDefinition>
+}
+
+data class ActionDefinition(
+    val key: String,
+    val displayText: String,
+    val parameters: List<ActionParameter> = emptyList(),
+    val description: String? = null
+)
+
+data class ActionParameter(
+    val name: String,
+    val type: SettingType,
+    val required: Boolean = true,
+    val defaultValue: Any? = null,
+    val description: String? = null
+)
+
 data class SettingDefinition(
     val key: String,
     val type: SettingType,
@@ -35,7 +71,7 @@ data class SettingDefinition(
 )
 
 enum class SettingType {
-    BOOLEAN, INTEGER, STRING, FLOAT
+    BOOLEAN, INTEGER, STRING, FLOAT, ACTION
 }
 
 data class SettingValidation(
@@ -61,6 +97,7 @@ data class PersistedSettings(
 class SettingsRegistry(private val context: Context, val shellClient: ShellClient) {
     private val appSettings = ConcurrentHashMap<String, MutableMap<String, AppSettingsCategory>>()
     private val systemSettings = ConcurrentHashMap<String, Any>()
+    private val actionProviders = ConcurrentHashMap<String, SettingsActionProvider>()
 
     // Store saved app settings values until apps register their schemas
     private val savedAppSettingsValues =
@@ -370,6 +407,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
             SettingType.INTEGER -> value is Int || value is Long
             SettingType.STRING -> value is String
             SettingType.FLOAT -> value is Float || value is Double
+            SettingType.ACTION -> value is String // Actions are treated as strings
         }
 
         if (!isValidType) return false
@@ -448,6 +486,101 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
     suspend fun sendAppEvent(appId: String, eventType: String, payload: Map<String, Any>) {
         webServer?.broadcastAppEvent(appId, eventType, payload)
             ?: Log.w(TAG, "Cannot send app event - web server not initialized")
+    }
+
+    fun registerActionProvider(appId: String, provider: SettingsActionProvider) {
+        actionProviders[appId] = provider
+        Log.i(TAG, "Registered action provider for app: $appId")
+
+        // Broadcast available actions to web UI
+        registryScope.launch {
+            val actions = provider.getActionDefinitions()
+            sendAppEvent(appId, "actionsRegistered", mapOf<String, Any>("actions" to actions))
+        }
+    }
+
+    fun unregisterActionProvider(appId: String) {
+        actionProviders.remove(appId)
+        Log.i(TAG, "Unregistered action provider for app: $appId")
+    }
+
+    suspend fun executeAction(
+        appId: String,
+        action: String,
+        params: Map<String, Any>
+    ): ActionResult {
+        Log.i(TAG, "Executing action: $appId.$action with params: $params")
+
+        val provider = actionProviders[appId]
+        if (provider == null) {
+            val errorResult = ActionResult(
+                success = false,
+                message = "No action provider registered for app: $appId",
+                logs = listOf(
+                    LogEntry(
+                        level = LogLevel.ERROR,
+                        message = "Action provider not found for $appId"
+                    )
+                )
+            )
+
+            // Broadcast error result
+            sendAppEvent(
+                appId, "actionResult", mapOf<String, Any>(
+                    "action" to action,
+                    "success" to false,
+                    "message" to (errorResult.message ?: ""),
+                    "logs" to (errorResult.logs ?: emptyList())
+                )
+            )
+
+            return errorResult
+        }
+
+        return try {
+            val result = provider.executeAction(action, params)
+            Log.i(TAG, "Action $appId.$action completed. Success: ${result.success}")
+
+            // Broadcast action result via WebSocket
+            sendAppEvent(
+                appId, "actionResult", mapOf<String, Any>(
+                    "action" to action,
+                    "success" to result.success,
+                    "message" to (result.message ?: ""),
+                    "data" to (result.data ?: emptyMap()),
+                    "logs" to (result.logs ?: emptyList())
+                )
+            )
+
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "Action execution failed: $appId.$action", e)
+            val errorResult = ActionResult(
+                success = false,
+                message = "Action execution failed: ${e.message}",
+                logs = listOf(LogEntry(level = LogLevel.ERROR, message = "Exception: ${e.message}"))
+            )
+
+            // Broadcast error result
+            sendAppEvent(
+                appId, "actionResult", mapOf<String, Any>(
+                    "action" to action,
+                    "success" to false,
+                    "message" to (errorResult.message ?: ""),
+                    "logs" to (errorResult.logs ?: emptyList())
+                )
+            )
+
+            errorResult
+        }
+    }
+
+    fun getActionProvider(appId: String): SettingsActionProvider? {
+        return actionProviders[appId]
+    }
+
+    fun getAllActionProviders(): Map<String, SettingsActionProvider> {
+        return actionProviders.toMap()
     }
 
     private fun setupTemperatureMonitoring() {

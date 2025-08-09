@@ -23,6 +23,7 @@ export function useWebSocket() {
     send: websocketService.send.bind(websocketService),
     updateSetting: websocketService.updateSetting.bind(websocketService),
     registerForUpdates: websocketService.registerForUpdates.bind(websocketService),
+    executeAction: websocketService.executeAction.bind(websocketService),
     connect: websocketService.connect.bind(websocketService),
     disconnect: websocketService.disconnect.bind(websocketService)
   };
