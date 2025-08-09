@@ -18,6 +18,12 @@ class OkHttpDnsResolver : Dns {
     private val resolver = SimpleResolver("1.1.1.1")
 
     override fun lookup(hostname: String): List<InetAddress> {
+        if (hostname.matches(Regex("^\\d+\\.\\d+\\.\\d+\\.\\d+$"))) {
+            val parts = hostname.split(".")
+            val bytes = parts.map { it.toInt().toByte() }.toByteArray()
+            return listOf(InetAddress.getByAddress(bytes))
+        }
+
         val resolvedIpString = try {
             val lookup = Lookup(hostname, Type.A)
             lookup.setResolver(resolver)

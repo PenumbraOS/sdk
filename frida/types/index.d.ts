@@ -5,6 +5,7 @@ declare const Java: {
   ClassFactory: {
     get(loader: any): any;
   };
+  array(type: any, value: unknown[]): any;
   use(className: string): any;
   cast(obj: any, cls: any): any;
   scheduleOnMainThread(fn: () => void): void;
@@ -15,10 +16,7 @@ declare const Memory: {
 };
 
 declare const Module: {
-  getExportByName(
-    moduleName: string | null,
-    exportName: string
-  ): NativePointer;
+  getExportByName(moduleName: string | null, exportName: string): NativePointer;
 };
 
 declare const NativeFunction: new (
