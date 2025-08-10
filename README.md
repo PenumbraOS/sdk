@@ -13,6 +13,7 @@ The PenumbraOS SDK exposes the following restricted interfaces on the Ai Pin:
 - [WebSocket](sdk/src/main/java/com/penumbraos/sdk/api/WebSocketClient.kt) - Custom API implementation. Hopefully will add `OkHttp` handler soon
 - [Touchpad](sdk/src/main/java/com/penumbraos/sdk/api/TouchpadClient.kt)
 - [Speech Recognition](sdk/src/main/java/com/penumbraos/sdk/api/SttClient.kt)
+- [Settings Management](bridge-settings/src/main/java/com/penumbraos/bridge_settings/) - System and app settings with dynamic web UI
 
 ## Architecture
 
@@ -29,6 +30,24 @@ Quite literally just a bridge between the SDK and the privileged world. `untrust
 ### Bridge System Service
 
 The gateway to all actual privileged operations. Currently, all operations are exclusively things that can run in the `system` domain, so `bridge-system` also runs in `system`. Communicates with `bridge-core` over Binder. Located in `/bridge-system`.
+
+## CLI
+
+A command-line interface is available at `/data/local/tmp/penumbra` for managing system settings and executing module actions. Notably, this can be used to configure the eSIM.
+
+```bash
+# List available settings and actions
+penumbra settings list
+
+# Get/set system settings
+penumbra settings system audio.volume
+penumbra settings system audio.volume 75
+
+# Execute module actions
+penumbra settings esim getProfiles
+penumbra settings esim enableProfile --iccid 89012345678901234567
+penumbra settings esim downloadAndEnableProfile --activationCode LPA:1\$rsp.truphone.com\$QRF-SPEEDTEST
+```
 
 ## Installation
 
