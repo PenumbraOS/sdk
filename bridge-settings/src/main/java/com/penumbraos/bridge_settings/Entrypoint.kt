@@ -15,6 +15,12 @@ class Entrypoint {
             Looper.prepare()
             Log.i(TAG, "Starting Settings Service entrypoint")
 
+            Runtime.getRuntime().addShutdownHook(Thread {
+                Log.i(TAG, "Shutdown hook triggered")
+                stop()
+                exitProcess(0)
+            })
+
             try {
                 settingsService = SettingsService()
                 settingsService?.start()
