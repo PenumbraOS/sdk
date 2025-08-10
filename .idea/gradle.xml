@@ -14,6 +14,7 @@
             <option value="$PROJECT_DIR$/bridge-settings" />
             <option value="$PROJECT_DIR$/bridge-shell" />
             <option value="$PROJECT_DIR$/bridge-system" />
+            <option value="$PROJECT_DIR$/cli" />
             <option value="$PROJECT_DIR$/example" />
             <option value="$PROJECT_DIR$/sdk" />
           </set>

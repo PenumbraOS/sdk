@@ -3,33 +3,28 @@ package com.penumbraos.bridge_settings
 import android.util.Log
 import com.penumbraos.bridge.types.EsimProfile
 import com.penumbraos.sdk.api.EsimClient
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 
 private const val TAG = "ESimSettingsProvider"
 
-class ESimSettingsProvider(
+class EsimSettingsProvider(
     private val esimClient: EsimClient,
     private val settingsRegistry: SettingsRegistry
 ) : SettingsActionProvider {
-
-    private val providerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override suspend fun executeAction(action: String, params: Map<String, Any>): ActionResult {
         Log.i(TAG, "Executing eSIM action: $action with params: $params")
 
         return try {
-            when (action) {
-                "getProfiles" -> getProfilesAction()
-                "getActiveProfile" -> getActiveProfileAction()
-                "getEid" -> getEidAction()
-                "enableProfile" -> enableProfileAction(params)
-                "disableProfile" -> disableProfileAction(params)
-                "deleteProfile" -> deleteProfileAction(params)
-                "setNickname" -> setNicknameAction(params)
-                "downloadProfile" -> downloadProfileAction(params)
-                "downloadAndEnableProfile" -> downloadAndEnableProfileAction(params)
+            when (action.lowercase()) {
+                "getprofiles" -> getProfilesAction()
+                "getactiveprofile" -> getActiveProfileAction()
+                "geteid" -> getEidAction()
+                "enableprofile" -> enableProfileAction(params)
+                "disableprofile" -> disableProfileAction(params)
+                "deleteprofile" -> deleteProfileAction(params)
+                "setnickname" -> setNicknameAction(params)
+                "downloadprofile" -> downloadProfileAction(params)
+                "downloadandenableprofile" -> downloadAndEnableProfileAction(params)
                 else -> ActionResult(
                     success = false,
                     message = "Unknown eSIM action: $action",

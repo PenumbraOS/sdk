@@ -22,7 +22,7 @@ class SettingsService {
     private lateinit var settingsRegistry: SettingsRegistry
     private lateinit var webServer: SettingsWebServer
     private lateinit var settingsProvider: SettingsProvider
-    private lateinit var esimProvider: ESimSettingsProvider
+    private lateinit var esimProvider: EsimSettingsProvider
 
     fun start() {
         Log.i(TAG, "Starting Settings Service")
@@ -66,7 +66,7 @@ class SettingsService {
                     val esimProviderInterface = IEsimProvider.Stub.asInterface(bridge.esimProvider)
                     if (esimProviderInterface != null) {
                         val esimClient = EsimClient(esimProviderInterface)
-                        esimProvider = ESimSettingsProvider(esimClient, settingsRegistry)
+                        esimProvider = EsimSettingsProvider(esimClient, settingsRegistry)
                         settingsRegistry.registerActionProvider("esim", esimProvider)
                         Log.i(TAG, "Registered eSIM action provider")
                     } else {

@@ -40,6 +40,9 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                         Log.e(TAG, "Settings registration error: $message")
                         continuation.resumeWithException(SettingsException(message))
                     }
+                    override fun onActionResult(appId: String, action: String, success: Boolean, message: String, data: Map<*, *>) {
+                        Log.d(TAG, "Action result: $appId.$action success=$success")
+                    }
                 }
 
                 builder.categories.forEach { (categoryName, category) ->

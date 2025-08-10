@@ -42,6 +42,9 @@
       <SelectionState runConfigName="SDKBridge.bridge-shell">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
+      <SelectionState runConfigName="SDKBridge.cli">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>

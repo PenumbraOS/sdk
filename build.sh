@@ -14,5 +14,5 @@ if ! [ -f bridge-system/src/main/jniLibs/arm64-v8a/libgadget.so ]; then
   xz --force --decompress bridge-system/src/main/jniLibs/arm64-v8a/libgadget.so.xz
 fi
 
-./gradlew :sdk:publishToMavenLocal :bridge-core:installDebug :bridge-system:installDebug :bridge-shell:installDebug :bridge-settings:installDebug :example:installDebug
+./gradlew :sdk:publishToMavenLocal :bridge-core:installDebug :bridge-system:installDebug :bridge-shell:installDebug :bridge-settings:installDebug :cli:installDebug :example:installDebug
 echo "Built on $(date '+%Y-%m-%d %H:%M:%S')"

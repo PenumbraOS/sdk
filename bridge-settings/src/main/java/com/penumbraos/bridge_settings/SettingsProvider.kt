@@ -156,6 +156,31 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
         }
     }
 
+    override fun executeActionWithCallback(appId: String, action: String, params: Map<*, *>, callback: ISettingsCallback) {
+        providerScope.launch {
+            try {
+                val convertedParams = convertMapPayload(params)
+                val result = settingsRegistry.executeAction(appId, action, convertedParams)
+                Log.i(TAG, "Executed action with callback: $appId.$action")
+                
+                safeCallback(TAG) {
+                    callback.onActionResult(
+                        appId, 
+                        action, 
+                        result.success, 
+                        result.message ?: "", 
+                        result.data ?: emptyMap<String, Any>()
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error executing action: $appId.$action", e)
+                safeCallback(TAG) {
+                    callback.onError("Failed to execute action $appId.$action: ${e.message}")
+                }
+            }
+        }
+    }
+
     private fun convertSchemaToDefinitions(schema: Map<*, *>): Map<String, SettingDefinition> {
         val definitions = mutableMapOf<String, SettingDefinition>()
 
@@ -219,5 +244,109 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
     fun cleanup() {
         providerScope.cancel()
         callbacks.clear()
+    }
+
+    // Discovery methods for dynamic registration
+    override fun getAvailableSystemSettings(): List<com.penumbraos.bridge.types.SystemSettingInfo> {
+        return try {
+            val systemSettings = settingsRegistry.getAllSystemSettings()
+            systemSettings.map { (key, value) ->
+                com.penumbraos.bridge.types.SystemSettingInfo().apply {
+                    this.key = key
+                    this.type = when (value) {
+                        is Boolean -> "boolean"
+                        is Number -> "number"
+                        else -> "string"
+                    }
+                    this.currentValue = value.toString()
+                    this.readOnly = (key == "device.temperature")
+                    this.description = getSystemSettingDescription(key)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting available system settings", e)
+            emptyList()
+        }
+    }
+
+    override fun getRegisteredApps(): List<String> {
+        return try {
+            settingsRegistry.getAllActionProviders().keys.toList()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting registered apps", e)
+            emptyList()
+        }
+    }
+
+    override fun getAppActions(appId: String): List<com.penumbraos.bridge.types.ActionDefinition> {
+        return try {
+            val provider = settingsRegistry.getActionProvider(appId)
+            if (provider != null) {
+                val actions = provider.getActionDefinitions()
+                actions.values.map { definition ->
+                    com.penumbraos.bridge.types.ActionDefinition().apply {
+                        this.key = definition.key
+                        this.displayText = definition.displayText
+                        this.description = definition.description ?: ""
+                        this.parameters = definition.parameters.map { param ->
+                            com.penumbraos.bridge.types.ActionParameter().apply {
+                                this.name = param.name
+                                this.type = param.type.name.lowercase()
+                                this.required = param.required
+                                this.defaultValue = param.defaultValue?.toString() ?: ""
+                                this.description = param.description ?: ""
+                            }
+                        }
+                    }
+                }
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting app actions for $appId", e)
+            emptyList()
+        }
+    }
+
+    override fun getAllAvailableActions(): List<com.penumbraos.bridge.types.AppActionInfo> {
+        return try {
+            settingsRegistry.getAllActionProviders().map { (appId, provider) ->
+                val actions = provider.getActionDefinitions()
+                val actionDefinitions = actions.values.map { definition ->
+                    com.penumbraos.bridge.types.ActionDefinition().apply {
+                        this.key = definition.key
+                        this.displayText = definition.displayText
+                        this.description = definition.description ?: ""
+                        this.parameters = definition.parameters.map { param ->
+                            com.penumbraos.bridge.types.ActionParameter().apply {
+                                this.name = param.name
+                                this.type = param.type.name.lowercase()
+                                this.required = param.required
+                                this.defaultValue = param.defaultValue?.toString() ?: ""
+                                this.description = param.description ?: ""
+                            }
+                        }
+                    }
+                }
+                
+                com.penumbraos.bridge.types.AppActionInfo().apply {
+                    this.appId = appId
+                    this.actions = actionDefinitions
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting all available actions", e)
+            emptyList()
+        }
+    }
+    
+    private fun getSystemSettingDescription(key: String): String {
+        return when (key) {
+            "audio.volume" -> "Audio volume level (0-100)"
+            "audio.muted" -> "Audio muted state"
+            "display.humane_enabled" -> "Humane display enabled state"
+            "device.temperature" -> "Current device temperature (read-only)"
+            else -> "System setting: $key"
+        }
     }
 }
