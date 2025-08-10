@@ -35,7 +35,6 @@ const notifyJavaCallback = (
 };
 
 let lastCapturedProfiles: any[] = [];
-let lastCapturedEid: string = "";
 
 const safeHexToAscii = (hexString: any): string => {
   try {
@@ -144,13 +143,18 @@ const setupFactoryServiceHooks = (): void => {
       setSysProp.implementation = function (key: string, value: string) {
         const result = this.setSysProp(key, value);
 
-        if (key === "humane.esim.lastintent.result") {
+        const operationType = "factoryService";
+        let operationName = "setSysProp";
+
+        if (key === "humane.esim.EID") {
+          // Capture the actual EID when it's being set
+          log(`[Frida] Captured EID from system property: ${value}`);
+          notifyJavaCallback(operationType, "getEid", value, false);
+        } else if (key === "humane.esim.lastintent.result") {
           const isError =
             value.includes("Error") ||
             value.includes("No ") ||
             value.includes("Couldn't");
-          const operationType = "factoryService";
-          let operationName = "setSysProp";
           let resultData = value;
 
           if (value.includes("getProfile")) {
@@ -158,12 +162,6 @@ const setupFactoryServiceHooks = (): void => {
             resultData =
               !isError && lastCapturedProfiles.length > 0
                 ? JSON.stringify(lastCapturedProfiles)
-                : value;
-          } else if (value.includes("Get EID")) {
-            operationName = "getEid";
-            resultData =
-              !isError && lastCapturedEid
-                ? JSON.stringify(lastCapturedEid)
                 : value;
           } else if (value.includes("Get Ative profile")) {
             operationName = "getActiveProfile";
@@ -290,7 +288,6 @@ const setupEuiccLevelControllerListenerHooks = (): void => {
         EuiccLevelControllerListener[methodName].implementation = function (
           result: string
         ) {
-          if (methodName === "onGetEid") lastCapturedEid = result;
           const returnValue = this[methodName](result);
           const resultData =
             methodName === "onGetEid" ? JSON.stringify(result) : result;

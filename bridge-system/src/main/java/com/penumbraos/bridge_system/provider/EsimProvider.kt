@@ -165,7 +165,10 @@ class EsimProvider(
         if (pendingOperationType == operationType &&
             (pendingOperationName == operationName ||
                     (operationType == "DownloadControler" && (operationName == "onFinished" || operationName == "onError")) ||
-                    (operationType == "EuiccLevelController" && operationName == "onGetEid" && pendingOperationName == "getEid"))
+                    (operationType == "EuiccLevelController" && operationName == "onGetEid" && pendingOperationName == "getEid") ||
+                    (operationType == "factoryService" && operationName == "setSysProp" && pendingOperationName == "getEid" && result.contains(
+                        "eid"
+                    )))
         ) {
 
             if (isError) {
@@ -199,8 +202,7 @@ class EsimProvider(
 
                         (operationType == "factoryService" && operationName == "getEid") ||
                                 (operationType == "EuiccLevelController" && operationName == "onGetEid") -> {
-                            val eid = json.decodeFromString<String>(result)
-                            callback.onEid(eid)
+                            callback.onEid(result)
                         }
 
                         operationType == "ProfileInfoControler" -> {
