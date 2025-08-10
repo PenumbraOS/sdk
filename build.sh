@@ -5,6 +5,10 @@ adb shell touch /sdcard/penumbra/etc/pinitd/system/enabled/bridge_settings.unit
 adb shell touch /sdcard/penumbra/etc/pinitd/system/enabled/bridge_shell_service.unit
 adb shell touch /sdcard/penumbra/etc/pinitd/system/enabled/bridge_system_service.unit
 
+adb shell mkdir /data/local/tmp/bin
+adb push config/penumbra /data/local/tmp/bin/
+adb shell chmod +x /data/local/tmp/bin/penumbra
+
 ( cd bridge-settings/react-app && npm i && npm run build:android )
 ( cd frida && npm i && npm run build )
 cp frida/dist/index.js bridge-system/src/main/jniLibs/arm64-v8a/libgadget.script.so

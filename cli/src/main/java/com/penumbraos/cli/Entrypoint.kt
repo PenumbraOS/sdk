@@ -51,19 +51,36 @@ class Entrypoint {
         }
 
         suspend fun run(args: Array<String>) {
+            if (args.isEmpty()) {
+                showRootHelp()
+                return
+            }
+
+            when (args[0].lowercase()) {
+                "settings" -> handleSettingsCommand(args.drop(1).toTypedArray())
+                "help", "--help", "-h" -> showRootHelp()
+                else -> {
+                    println("Unknown command '${args[0]}'")
+                    println("Use 'penumbra help' to see available commands.")
+                    exitProcess(1)
+                }
+            }
+        }
+
+        private suspend fun handleSettingsCommand(args: Array<String>) {
             if (!connectToServices()) {
                 println("Failed to connect to settings service")
                 throw RuntimeException("Service connection failed")
             }
 
             if (args.isEmpty()) {
-                showHelp()
+                showSettingsHelp()
                 return
             }
 
             when (args[0].lowercase()) {
                 "list" -> listAvailableOptions()
-                "help", "--help", "-h" -> showHelp()
+                "help", "--help", "-h" -> showSettingsHelp()
                 "system" -> handleSystemSetting(args.drop(1).toList())
                 else -> handleAppAction(args.toList())
             }
@@ -94,24 +111,47 @@ class Entrypoint {
             }
         }
 
-        private fun showHelp() {
+        private fun showRootHelp() {
+            println(
+                """
+            PenumbraOS CLI
+            
+            Usage:
+              penumbra <command> [options...]
+              
+            Available commands:
+              settings    Manage system and app settings
+              help        Show this help message
+              
+            Examples:
+              penumbra settings list
+              penumbra settings system audio.volume 75
+              penumbra settings esim getProfiles
+              
+            For command-specific help, use: penumbra <command> help
+            
+        """.trimIndent()
+            )
+        }
+
+        private fun showSettingsHelp() {
             println(
                 """
             PenumbraOS Settings CLI
             
             Usage:
-              pin settings list                              - List all available modules and actions
-              pin settings system <setting> [value]         - Get or set system setting
-              pin settings <module> <action> [params...]    - Execute module action
-              pin settings help                             - Show this help
+              penumbra settings list                              - List all available modules and actions
+              penumbra settings system <setting> [value]         - Get or set system setting
+              penumbra settings <module> <action> [params...]    - Execute module action
+              penumbra settings help                             - Show this help
             
-            Use 'pin settings list' to see all available system settings and module actions.
+            Use 'penumbra settings list' to see all available system settings and module actions.
             
             Examples:
-              pin settings list
-              pin settings system audio.volume 75
-              pin settings esim getProfiles
-              pin settings esim enableProfile --iccid 89012345678901234567
+              penumbra settings list
+              penumbra settings system audio.volume 75
+              penumbra settings esim getProfiles
+              penumbra settings esim enableProfile --iccid 89012345678901234567
             
         """.trimIndent()
             )

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# PenumbraOS CLI wrapper
+set -e
+
+PACKAGE_NAME="com.penumbraos.cli"
+MAIN_CLASS="com.penumbraos.cli.Entrypoint"
+
+# Get package path
+PACKAGE_PATH=$(pm path "$PACKAGE_NAME" 2>/dev/null | sed 's/^package://' || true)
+
+if [ -z "$PACKAGE_PATH" ]; then
+    echo "Error: Package '$PACKAGE_NAME' not found." >&2
+    echo "Please ensure the PenumbraOS SDK is properly installed." >&2
+    exit 1
+fi
+
+# Execute the CLI, passing all arguments through
+exec app_process -cp "$PACKAGE_PATH" /system/bin "$MAIN_CLASS" "$@"
