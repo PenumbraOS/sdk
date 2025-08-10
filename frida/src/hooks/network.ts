@@ -28,7 +28,14 @@ export const setupNetworkHooks = (): void => {
       method.implementation = function (hostname: string) {
         if (dnsProvider) {
           const resolvedHostname = getDns(hostname);
-          if (isIpAddress(resolvedHostname)) {
+          if (resolvedHostname === null) {
+            const UnknownHostException = Java.use(
+              "java.net.UnknownHostException"
+            );
+            throw UnknownHostException.$new(
+              `DNS resolution failed for ${hostname}`
+            );
+          } else if (isIpAddress(resolvedHostname)) {
             log(`Creating InetAddress directly for IP ${resolvedHostname}`);
             const parts = resolvedHostname.split(".");
             const bytes = Java.array(
