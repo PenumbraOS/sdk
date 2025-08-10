@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useWebSocketMessages, useWebSocket } from "./useWebSocket";
-import { SystemStatus, ActionResult } from "../types/settings";
+import { SystemStatus, ActionResult, ExecutionStatus } from "../types/settings";
 
 export function useSettings() {
   const [allSettings, setAllSettings] = useState<
@@ -12,6 +12,8 @@ export function useSettings() {
   const [actionResults, setActionResults] = useState<
     Record<string, ActionResult>
   >({});
+  const [executionStatus, setExecutionStatus] =
+    useState<ExecutionStatus | null>(null);
 
   const { lastMessage } = useWebSocketMessages();
   const { updateSetting, executeAction, connectionState } = useWebSocket();
@@ -21,7 +23,13 @@ export function useSettings() {
 
     switch (lastMessage.type) {
       case "allSettings":
-        setAllSettings(lastMessage.settings);
+        const { executionStatus, ...settings } = lastMessage.settings;
+        setAllSettings(settings);
+        setExecutionStatus(
+          executionStatus
+            ? (executionStatus as unknown as ExecutionStatus)
+            : null
+        );
         setLoading(false);
         break;
 
@@ -153,6 +161,7 @@ export function useSettings() {
     error,
     connected: connectionState.connected,
     actionResults,
+    executionStatus,
     updateSystemSetting,
     updateAppSetting,
     getSystemSettings,

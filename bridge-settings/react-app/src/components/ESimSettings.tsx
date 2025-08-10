@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ActionButton from "./ActionButton";
-import { ActionDefinition, ActionResult } from "../types/settings";
+import { ActionDefinition, ActionResult, ExecutionStatus } from "../types/settings";
 
 interface ESimSettingsProps {
   onExecuteAction: (
@@ -9,11 +9,13 @@ interface ESimSettingsProps {
     params: Record<string, unknown>
   ) => void;
   actionResults: Record<string, ActionResult>;
+  executionStatus?: ExecutionStatus | null;
 }
 
 const ESimSettings: React.FC<ESimSettingsProps> = ({
   onExecuteAction,
   actionResults,
+  executionStatus,
 }) => {
   const [actions, setActions] = useState<Record<string, ActionDefinition>>({});
   const [isConnected, setIsConnected] = useState(false);
@@ -168,6 +170,7 @@ const ESimSettings: React.FC<ESimSettingsProps> = ({
               action={actions[actionKey]}
               onExecute={onExecuteAction}
               actionResult={actionResults[`esim.${actionKey}`]}
+              executionStatus={executionStatus}
             />
           ))}
         </div>

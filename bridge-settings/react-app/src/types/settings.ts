@@ -57,6 +57,14 @@ export interface ActionResult {
   logs?: LogEntry[];
 }
 
+export interface ExecutionStatus {
+  providerId: string;
+  actionName: string;
+  params: Record<string, unknown>;
+  startTime: number;
+  duration: number;
+}
+
 export interface SettingsCategory {
   name: string;
   settings: Record<string, Setting>;

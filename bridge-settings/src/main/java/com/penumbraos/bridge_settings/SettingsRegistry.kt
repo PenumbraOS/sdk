@@ -3,6 +3,8 @@ package com.penumbraos.bridge_settings
 import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import com.penumbraos.bridge_settings.android.TemperatureController
 import com.penumbraos.sdk.api.ShellClient
@@ -94,10 +96,63 @@ data class PersistedSettings(
     val appSettings: Map<String, Map<String, Map<String, JsonElement>>> = emptyMap()
 )
 
+data class ExecutingAction(
+    val providerId: String,
+    val actionName: String, 
+    val params: Map<String, Any>,
+    val startTime: Long
+)
+
 class SettingsRegistry(private val context: Context, val shellClient: ShellClient) {
     private val appSettings = ConcurrentHashMap<String, MutableMap<String, AppSettingsCategory>>()
     private val systemSettings = ConcurrentHashMap<String, Any>()
     private val actionProviders = ConcurrentHashMap<String, SettingsActionProvider>()
+    
+    // Execution state tracking
+    @Volatile
+    private var currentExecutingAction: ExecutingAction? = null
+    private val executionTimeoutHandler = Handler(Looper.getMainLooper())
+    private var executionTimeoutRunnable: Runnable? = null
+
+    companion object {
+        private const val EXECUTION_TIMEOUT_MS = 30000L // 30 seconds
+    }
+    
+    private fun startExecutionTimeout(appId: String, action: String) {
+        clearState()
+        
+        executionTimeoutRunnable = Runnable {
+            Log.w(TAG, "Action execution timeout: $appId.$action")
+            currentExecutingAction = null
+            
+            // Broadcast timeout error
+            registryScope.launch {
+                sendAppEvent(
+                    appId, "actionResult", mapOf<String, Any>(
+                        "action" to action,
+                        "success" to false,
+                        "message" to "Action timed out after ${EXECUTION_TIMEOUT_MS / 1000} seconds",
+                        "logs" to listOf(mapOf<String, Any>(
+                            "timestamp" to System.currentTimeMillis(),
+                            "level" to "ERROR",
+                            "message" to "Action execution timeout"
+                        ))
+                    )
+                )
+            }
+        }
+        
+        executionTimeoutHandler.postDelayed(executionTimeoutRunnable!!, EXECUTION_TIMEOUT_MS)
+        Log.d(TAG, "Started execution timeout for: $appId.$action")
+    }
+    
+    private fun clearState() {
+        currentExecutingAction = null
+        executionTimeoutRunnable?.let {
+            executionTimeoutHandler.removeCallbacks(it)
+            executionTimeoutRunnable = null
+        }
+    }
 
     // Store saved app settings values until apps register their schemas
     private val savedAppSettingsValues =
@@ -396,6 +451,11 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
             }
             result[appId] = appData
         }
+        
+        // Add current execution status
+        getCurrentExecutionStatus()?.let { executionStatus ->
+            result["executionStatus"] = executionStatus
+        }
 
         return result
     }
@@ -510,6 +570,9 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         params: Map<String, Any>
     ): ActionResult {
         Log.i(TAG, "Executing action: $appId.$action with params: $params")
+        
+        currentExecutingAction = ExecutingAction(appId, action, params, System.currentTimeMillis())
+        startExecutionTimeout(appId, action)
 
         val provider = actionProviders[appId]
         if (provider == null) {
@@ -533,6 +596,8 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                     "logs" to (errorResult.logs ?: emptyList())
                 )
             )
+            
+            clearState()
 
             return errorResult
         }
@@ -551,6 +616,8 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                     "logs" to (result.logs ?: emptyList())
                 )
             )
+            
+            clearState()
 
             result
         } catch (e: Exception) {
@@ -570,6 +637,8 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                     "logs" to (errorResult.logs ?: emptyList())
                 )
             )
+            
+            clearState()
 
             errorResult
         }
@@ -577,6 +646,18 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
 
     fun getActionProvider(appId: String): SettingsActionProvider? {
         return actionProviders[appId]
+    }
+    
+    fun getCurrentExecutionStatus(): Map<String, Any>? {
+        return currentExecutingAction?.let { action ->
+            mapOf(
+                "providerId" to action.providerId,
+                "actionName" to action.actionName,
+                "params" to action.params,
+                "startTime" to action.startTime,
+                "duration" to (System.currentTimeMillis() - action.startTime)
+            )
+        }
     }
 
     fun getAllActionProviders(): Map<String, SettingsActionProvider> {

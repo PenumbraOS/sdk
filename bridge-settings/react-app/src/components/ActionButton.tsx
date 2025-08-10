@@ -4,6 +4,7 @@ import {
   ActionParameter,
   ActionResult,
   LogEntry,
+  ExecutionStatus,
 } from "../types/settings";
 
 interface ActionButtonProps {
@@ -15,6 +16,7 @@ interface ActionButtonProps {
     params: Record<string, unknown>
   ) => void;
   actionResult?: ActionResult;
+  executionStatus?: ExecutionStatus | null;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -22,8 +24,9 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   action,
   onExecute,
   actionResult,
+  executionStatus,
 }) => {
-  const [isExecuting, setIsExecuting] = useState(false);
+  const [isExecutingLocally, setIsExecutingLocally] = useState(false);
   const [showParameters, setShowParameters] = useState(false);
   const [paramValues, setParamValues] = useState<Record<string, unknown>>({});
   const [lastResult, setLastResult] = useState<ActionResult | null>(null);
@@ -36,7 +39,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       return;
     }
 
-    setIsExecuting(true);
+    setIsExecutingLocally(true);
     onExecute(appId, action.key, paramValues);
   };
 
@@ -127,11 +130,18 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     );
   };
 
+  // Check if this specific action is currently executing based on global execution status
+  const isCurrentlyExecuting =
+    (executionStatus != null &&
+      executionStatus.providerId === appId &&
+      executionStatus.actionName === action.key) ||
+    isExecutingLocally;
+
   React.useEffect(() => {
     // When we receive an external action result, update our local state and stop executing
     if (actionResult) {
       setLastResult(actionResult);
-      setIsExecuting(false);
+      setIsExecutingLocally(false);
     }
   }, [actionResult]);
 
@@ -139,11 +149,11 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     <div className="action-button-container">
       <div className="action-header">
         <button
-          className={`action-button ${isExecuting ? "executing" : ""}`}
+          className={`action-button ${isCurrentlyExecuting ? "executing" : ""}`}
           onClick={handleExecute}
-          disabled={isExecuting}
+          disabled={isCurrentlyExecuting}
         >
-          {isExecuting ? "Executing..." : action.displayText}
+          {isCurrentlyExecuting ? "Executing..." : action.displayText}
         </button>
         {action.description && (
           <span className="action-description">{action.description}</span>
@@ -158,9 +168,9 @@ const ActionButton: React.FC<ActionButtonProps> = ({
             <button
               className="execute-with-params"
               onClick={handleExecute}
-              disabled={isExecuting}
+              disabled={isCurrentlyExecuting}
             >
-              {isExecuting ? "Executing..." : "Execute"}
+              {isCurrentlyExecuting ? "Executing..." : "Execute"}
             </button>
             <button
               className="cancel-params"

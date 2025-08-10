@@ -7,7 +7,7 @@ import MABLStatus from "./components/MABLStatus";
 import ESimSettings from "./components/ESimSettings";
 
 function App() {
-  const { loading, error, connected, executeAction, actionResults } = useSettings();
+  const { loading, error, connected, executeAction, actionResults, executionStatus } = useSettings();
 
   if (loading) {
     return (
@@ -36,7 +36,7 @@ function App() {
             <SystemSettings />
             <AppSettings />
             <MABLStatus />
-            <ESimSettings onExecuteAction={executeAction} actionResults={actionResults} />
+            <ESimSettings onExecuteAction={executeAction} actionResults={actionResults} executionStatus={executionStatus} />
           </div>
         </>
       )}
