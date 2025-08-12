@@ -1,6 +1,5 @@
 package com.penumbraos.bridge_system.provider
 
-import android.util.Log
 import com.penumbraos.bridge.IDnsProvider
 import okhttp3.Dns
 import java.net.InetAddress

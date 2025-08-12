@@ -32,22 +32,22 @@ class WebSocketProvider(private val client: OkHttpClient) : IWebSocketProvider.S
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 val responseHeaders =
                     response.headers.toMultimap().mapValues { it.value.joinToString() }
-                safeCallback(TAG) {
+                safeCallback(TAG, {
                     callback.onOpen(requestId, responseHeaders)
-                }
+                }, onDeadObject = { webSockets.remove(requestId) })
                 webSockets[requestId] = webSocket
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                safeCallback(TAG) {
+                safeCallback(TAG, {
                     callback.onMessage(requestId, 1, text.toByteArray())
-                }
+                }, onDeadObject = { webSockets.remove(requestId) })
             }
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                safeCallback(TAG) {
+                safeCallback(TAG, {
                     callback.onMessage(requestId, 2, bytes.toByteArray())
-                }
+                }, onDeadObject = { webSockets.remove(requestId) })
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
@@ -55,16 +55,16 @@ class WebSocketProvider(private val client: OkHttpClient) : IWebSocketProvider.S
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                safeCallback(TAG) {
+                safeCallback(TAG, {
                     callback.onClose(requestId)
-                }
+                })
                 webSockets.remove(requestId)
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                safeCallback(TAG) {
+                safeCallback(TAG, {
                     callback.onError(requestId, t.message ?: "Unknown error")
-                }
+                })
                 webSockets.remove(requestId)
             }
         })

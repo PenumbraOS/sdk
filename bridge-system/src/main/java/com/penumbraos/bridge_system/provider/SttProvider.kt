@@ -23,38 +23,55 @@ class SttProvider(private val context: Context, looper: Looper) : ISttProvider.S
 
     private val recognitionListener = object : RecognitionListener {
         override fun onReadyForSpeech(params: Bundle?) {
-            safeCallback(TAG) { currentListener?.onReadyForSpeech(params) }
+            safeCallback(
+                TAG,
+                { currentListener?.onReadyForSpeech(params) },
+                onDeadObject = { destroySpeechRecognizer() })
         }
 
         override fun onBeginningOfSpeech() {
-            safeCallback(TAG) { currentListener?.onBeginningOfSpeech() }
+            safeCallback(
+                TAG, { currentListener?.onBeginningOfSpeech() },
+                onDeadObject = { destroySpeechRecognizer() })
         }
 
         override fun onRmsChanged(rmsdB: Float) {
-            safeCallback(TAG) { currentListener?.onRmsChanged(rmsdB) }
+            safeCallback(
+                TAG, { currentListener?.onRmsChanged(rmsdB) },
+                onDeadObject = { destroySpeechRecognizer() })
         }
 
         override fun onBufferReceived(buffer: ByteArray?) {
             if (buffer != null) {
-                safeCallback(TAG) { currentListener?.onBufferReceived(buffer) }
+                safeCallback(
+                    TAG, { currentListener?.onBufferReceived(buffer) },
+                    onDeadObject = { destroySpeechRecognizer() })
             }
         }
 
         override fun onEndOfSpeech() {
-            safeCallback(TAG) { currentListener?.onEndOfSpeech() }
+            safeCallback(
+                TAG, { currentListener?.onEndOfSpeech() },
+                onDeadObject = { destroySpeechRecognizer() })
         }
 
         override fun onError(error: Int) {
             Log.e(TAG, "Speech recognition error: $error")
-            safeCallback(TAG) { currentListener?.onError(error) }
+            safeCallback(
+                TAG, { currentListener?.onError(error) },
+                onDeadObject = { destroySpeechRecognizer() })
         }
 
         override fun onResults(results: Bundle?) {
-            safeCallback(TAG) { currentListener?.onResults(results) }
+            safeCallback(
+                TAG, { currentListener?.onResults(results) },
+                onDeadObject = { destroySpeechRecognizer() })
         }
 
         override fun onPartialResults(partialResults: Bundle?) {
-            safeCallback(TAG) { currentListener?.onPartialResults(partialResults) }
+            safeCallback(
+                TAG, { currentListener?.onPartialResults(partialResults) },
+                onDeadObject = { destroySpeechRecognizer() })
         }
 
         override fun onEvent(eventType: Int, params: Bundle?) {

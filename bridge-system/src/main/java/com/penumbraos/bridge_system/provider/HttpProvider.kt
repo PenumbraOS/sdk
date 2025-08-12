@@ -14,7 +14,7 @@ import java.io.IOException
 private const val TAG = "HttpProvider"
 
 class HttpProvider(private val client: OkHttpClient) : IHttpProvider.Stub() {
-    
+
     override fun makeHttpRequest(
         requestId: String,
         url: String,
@@ -35,9 +35,9 @@ class HttpProvider(private val client: OkHttpClient) : IHttpProvider.Stub() {
 
         client.newCall(requestBuilder.build()).enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                safeCallback(TAG) {
+                safeCallback(TAG, {
                     callback.onError(requestId, e.message ?: "Unknown error", -1)
-                }
+                })
             }
 
             override fun onResponse(call: Call, response: Response) {
@@ -45,13 +45,13 @@ class HttpProvider(private val client: OkHttpClient) : IHttpProvider.Stub() {
                 val responseHeaders =
                     response.headers.toMultimap().mapValues { it.value.joinToString() }
 
-                if (!safeCallback(TAG) {
+                if (!safeCallback(TAG, {
                         callback.onHeaders(
                             requestId,
                             response.code,
                             responseHeaders
                         )
-                    }) {
+                    })) {
                     return
                 }
 
@@ -61,19 +61,19 @@ class HttpProvider(private val client: OkHttpClient) : IHttpProvider.Stub() {
                     val inputStream = responseBody.byteStream()
                     var bytesRead = 0
                     while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                        if (!safeCallback(TAG) {
+                        if (!safeCallback(TAG, {
                                 callback.onData(
                                     requestId,
                                     buffer.copyOf(bytesRead)
                                 )
-                            }) {
+                            })) {
                             return
                         }
                     }
                 }
-                safeCallback(TAG) {
+                safeCallback(TAG, {
                     callback.onComplete(requestId)
-                }
+                })
             }
         })
     }

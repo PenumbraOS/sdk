@@ -4,12 +4,17 @@ import android.os.DeadObjectException
 import android.os.RemoteException
 import android.util.Log
 
-inline fun safeCallback(tag: String, operation: () -> Unit): Boolean {
+inline fun safeCallback(
+    tag: String,
+    operation: () -> Unit,
+    onDeadObject: () -> Unit = {}
+): Boolean {
     return try {
         operation()
         true
     } catch (e: DeadObjectException) {
         Log.w(tag, "Dead callback detected", e)
+        onDeadObject()
         false
     } catch (e: RemoteException) {
         Log.w(tag, "RemoteException in callback", e)

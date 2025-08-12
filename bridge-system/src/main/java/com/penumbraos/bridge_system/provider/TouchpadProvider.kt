@@ -23,11 +23,15 @@ class TouchpadProvider(private val looper: Looper) :
         InputEventReceiver(inputChannel, looper) {
         override fun onInputEvent(event: InputEvent?) {
             if (event != null) {
+                val callbacksToRemove = mutableListOf<ITouchpadCallback>()
                 callbacks.forEach { callback ->
-                    safeCallback(TAG) {
+                    safeCallback(TAG, {
                         callback.onInputEvent(event)
-                    }
+                    }, onDeadObject = {
+                        callbacksToRemove.add(callback)
+                    })
                 }
+                callbacksToRemove.forEach { callback -> deregisterCallback(callback) }
             }
             super.onInputEvent(event)
         }
