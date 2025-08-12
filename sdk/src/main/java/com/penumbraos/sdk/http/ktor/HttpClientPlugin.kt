@@ -11,6 +11,7 @@ import io.ktor.client.call.HttpClientCall
 import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.plugin
 import io.ktor.client.request.HttpResponseData
+import io.ktor.client.utils.EmptyContent
 import io.ktor.http.HttpProtocolVersion
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
@@ -47,17 +48,22 @@ class HttpClientPlugin(private val penumbraClient: PenumbraClient) {
             Log.d("HttpClientPlugin", "Installing HttpClientPlugin Ktor")
 
             scope.plugin(HttpSend).intercept { request ->
+                val requestBody = when (request.body as Any?) {
+                    is TextContent -> (request.body as TextContent).text
+                    is EmptyContent -> null
+                    null -> null
+                    else -> request.body.toString()
+                }
                 val httpRequest = HttpRequest(
                     url = request.url.toString(),
                     method = request.method.value,
                     headers = request.headers.entries().associate { (key, values) ->
                         key to values.joinToString(", ")
                     },
-                    body = when (request.body) {
-                        is TextContent -> (request.body as TextContent).text
-                        else -> request.body.toString()
-                    }
+                    body = requestBody
                 )
+
+                Log.i("HttpClientPlugin", "Request: $requestBody")
 
                 val streamingFlow = plugin.coreInterceptor.intercept(httpRequest)
 
@@ -70,11 +76,16 @@ class HttpClientPlugin(private val penumbraClient: PenumbraClient) {
                     streamingFlow.collect { response ->
                         when (response) {
                             is HttpStreamResponse.Headers -> {
+                                Log.i(
+                                    "HttpClientPlugin",
+                                    "Response headers: ${response.statusCode}, ${response.headers}"
+                                )
                                 statusCode = response.statusCode
                                 headers = response.headers
                             }
 
                             is HttpStreamResponse.Data -> {
+                                Log.i("HttpClientPlugin", "Stream response: ${response.chunk}")
                                 streamingByteChannel.writeStringUtf8(response.chunk)
                                 streamingByteChannel.flush()
                             }
