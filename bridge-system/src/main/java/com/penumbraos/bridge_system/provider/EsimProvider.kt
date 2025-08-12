@@ -162,20 +162,51 @@ class EsimProvider(
             return
         }
 
-        if (pendingOperationType == operationType &&
-            (pendingOperationName == operationName ||
+        // Match if we have a pending operation and either:
+        // 1. Exact match of operation type and name
+        // 2. Special cases for known patterns
+        // 3. Any setSysProp callback (since these contain results for all operations)
+        if (activeCallback != null &&
+            (pendingOperationType == operationType && pendingOperationName == operationName ||
                     (operationType == "DownloadControler" && (operationName == "onFinished" || operationName == "onError")) ||
                     (operationType == "EuiccLevelController" && operationName == "onGetEid" && pendingOperationName == "getEid") ||
-                    (operationType == "factoryService" && operationName == "setSysProp" && pendingOperationName == "getEid" && result.contains(
-                        "eid"
-                    )))
+                    (operationType == "factoryService" && operationName == "setSysProp"))
         ) {
 
             if (isError) {
+                Log.d(TAG, "Processing error callback: '$result'")
                 callback.onError(result)
             } else {
                 try {
                     when {
+                        // Handle setSysProp callbacks based on pending operation type
+                        operationType == "factoryService" && operationName == "setSysProp" -> {
+                            when (pendingOperationType) {
+                                "DownloadControler" -> {
+                                    // For download operations, create a simple operation result
+                                    val operationResult = OperationResult(
+                                        operation = pendingOperationName ?: "download",
+                                        result = result,
+                                        success = !isError
+                                    )
+                                    callback.onOperationResult(operationResult.toEsimOperationResult())
+                                }
+                                "ProfileInfoControler" -> {
+                                    // For profile operations, create a simple operation result  
+                                    val operationResult = OperationResult(
+                                        operation = pendingOperationName ?: "profile",
+                                        result = result,
+                                        success = !isError
+                                    )
+                                    callback.onOperationResult(operationResult.toEsimOperationResult())
+                                }
+                                else -> {
+                                    Log.w(TAG, "Unhandled setSysProp callback for pending operation: $pendingOperationType")
+                                    callback.onError("Unhandled setSysProp result for $pendingOperationType")
+                                }
+                            }
+                        }
+
                         operationType == "factoryService" && operationName == "getProfiles" -> {
                             val profiles = json.decodeFromString<List<ProfileData>>(result)
                             val esimProfiles = profiles.map { it.toEsimProfile() }
