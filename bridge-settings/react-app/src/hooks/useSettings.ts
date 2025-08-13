@@ -127,18 +127,15 @@ export function useSettings() {
     }
   }, [lastMessage]);
 
-  const updateSystemSetting = (key: string, value: unknown) => {
-    updateSetting("system", key, value);
-  };
+  const updateSystemSetting = (key: string, value: unknown) =>
+    updateSetting("system", "main", key, value);
 
   const updateAppSetting = (
     appId: string,
     category: string,
     key: string,
     value: unknown
-  ) => {
-    updateSetting(`${appId}.${category}`, key, value);
-  };
+  ) => updateSetting(appId, category, key, value);
 
   const getSystemSettings = () => {
     return allSettings.system || {};

@@ -1,21 +1,21 @@
-import React from 'react';
+import React from "react";
 
 interface SliderProps {
   value: number;
-  min: number;
-  max: number;
+  min?: number;
+  max?: number;
   step?: number;
   onChange: (value: number) => void;
   disabled?: boolean;
 }
 
-const Slider: React.FC<SliderProps> = ({ 
-  value, 
-  min, 
-  max, 
-  step = 1, 
-  onChange, 
-  disabled = false 
+const Slider: React.FC<SliderProps> = ({
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+  disabled = false,
 }) => {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!disabled) {

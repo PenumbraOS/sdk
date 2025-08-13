@@ -6,6 +6,7 @@ import {
   LogEntry,
   ExecutionStatus,
 } from "../types/settings";
+import TextInput from "./TextInput";
 
 interface ActionButtonProps {
   appId: string;
@@ -74,11 +75,10 @@ const ActionButton: React.FC<ActionButtonProps> = ({
           handleParameterChange(param.name, parseFloat(e.target.value) || 0),
       },
       string: {
-        type: "text" as const,
+        type: "string" as const,
         value: String(currentValue),
         placeholder: param.description,
-        onChange: (e: React.ChangeEvent<HTMLInputElement>) =>
-          handleParameterChange(param.name, e.target.value),
+        onChange: (value: string) => handleParameterChange(param.name, value),
       },
     };
 
@@ -96,7 +96,15 @@ const ActionButton: React.FC<ActionButtonProps> = ({
           {param.name}
           {param.required && <span className="required">*</span>}
         </span>
-        <input {...inputConfig} />
+        {inputConfig.type === "string" ? (
+          <TextInput
+            value={inputConfig.value}
+            onChange={inputConfig.onChange}
+            placeholder={inputConfig.placeholder}
+          />
+        ) : (
+          <input {...inputConfig} />
+        )}
         {param.description && (
           <span className="parameter-description">{param.description}</span>
         )}

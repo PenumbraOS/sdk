@@ -123,8 +123,11 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
     override fun sendAppStatusUpdate(appId: String, component: String, payload: Map<*, *>) {
         providerScope.launch {
             try {
-                val convertedPayload = convertMapPayload(payload)
-                settingsRegistry.sendAppStatusUpdate(appId, component, convertedPayload)
+                settingsRegistry.sendAppStatusUpdate(
+                    appId,
+                    component,
+                    payload as Map<String, Any>
+                )
                 Log.d(TAG, "Sent app status update: $appId.$component")
             } catch (e: Exception) {
                 Log.e(TAG, "Error sending app status update: $appId.$component", e)
@@ -135,8 +138,7 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
     override fun sendAppEvent(appId: String, eventType: String, payload: Map<*, *>) {
         providerScope.launch {
             try {
-                val convertedPayload = convertMapPayload(payload)
-                settingsRegistry.sendAppEvent(appId, eventType, convertedPayload)
+                settingsRegistry.sendAppEvent(appId, eventType, payload as Map<String, Any>)
                 Log.d(TAG, "Sent app event: $appId.$eventType")
             } catch (e: Exception) {
                 Log.e(TAG, "Error sending app event: $appId.$eventType", e)
@@ -147,8 +149,7 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
     override fun executeAction(appId: String, action: String, params: Map<*, *>) {
         providerScope.launch {
             try {
-                val convertedParams = convertMapPayload(params)
-                settingsRegistry.executeAction(appId, action, convertedParams)
+                settingsRegistry.executeAction(appId, action, params as Map<String, Any>)
                 Log.i(TAG, "Executed action: $appId.$action")
             } catch (e: Exception) {
                 Log.e(TAG, "Error executing action: $appId.$action", e)
@@ -156,19 +157,24 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
         }
     }
 
-    override fun executeActionWithCallback(appId: String, action: String, params: Map<*, *>, callback: ISettingsCallback) {
+    override fun executeActionWithCallback(
+        appId: String,
+        action: String,
+        params: Map<*, *>,
+        callback: ISettingsCallback
+    ) {
         providerScope.launch {
             try {
-                val convertedParams = convertMapPayload(params)
-                val result = settingsRegistry.executeAction(appId, action, convertedParams)
+                val result =
+                    settingsRegistry.executeAction(appId, action, params as Map<String, Any>)
                 Log.i(TAG, "Executed action with callback: $appId.$action")
-                
+
                 safeCallback(TAG) {
                     callback.onActionResult(
-                        appId, 
-                        action, 
-                        result.success, 
-                        result.message ?: "", 
+                        appId,
+                        action,
+                        result.success,
+                        result.message ?: "",
                         result.data ?: emptyMap<String, Any>()
                     )
                 }
@@ -230,10 +236,6 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
             value.toFloatOrNull() != null -> value.toFloat()
             else -> value
         }
-    }
-
-    private fun convertMapPayload(payload: Map<*, *>): Map<String, Any> {
-        return payload.mapKeys { it.key.toString() }.mapValues { it.value ?: "" }
     }
 
     private fun notifySettingsChanged(allSettings: Map<String, Any>) {
@@ -328,7 +330,7 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
                         }
                     }
                 }
-                
+
                 com.penumbraos.bridge.types.AppActionInfo().apply {
                     this.appId = appId
                     this.actions = actionDefinitions
@@ -339,7 +341,7 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
             emptyList()
         }
     }
-    
+
     private fun getSystemSettingDescription(key: String): String {
         return when (key) {
             "audio.volume" -> "Audio volume level (0-100)"

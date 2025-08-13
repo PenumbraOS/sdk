@@ -3,6 +3,7 @@
 package com.penumbraos.bridge_settings
 
 import android.util.Log
+import com.penumbraos.bridge_settings.json.toJsonElement
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -32,12 +33,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
@@ -52,7 +53,12 @@ private const val TAG = "SettingsWebServer"
 sealed class SettingsMessage {
     @Serializable
     @SerialName("updateSetting")
-    data class UpdateSetting(val category: String, val key: String, val value: JsonElement) :
+    data class UpdateSetting(
+        val appId: String,
+        val category: String,
+        val key: String,
+        val value: JsonElement
+    ) :
         SettingsMessage()
 
     @Serializable
@@ -86,14 +92,16 @@ sealed class StatusMessage {
 
     @Serializable
     @SerialName("allSettings")
-    data class AllSettings(val settings: Map<String, Map<String, JsonElement>>) : StatusMessage()
+    data class AllSettings(val settings: JsonElement) :
+        StatusMessage()
 
     @Serializable
     @SerialName("appStatusUpdate")
     data class AppStatusUpdate(
         val appId: String,
         val component: String,
-        val data: Map<String, JsonElement>
+        @Contextual
+        val data: JsonElement
     ) : StatusMessage()
 
     @Serializable
@@ -101,7 +109,8 @@ sealed class StatusMessage {
     data class AppEvent(
         val appId: String,
         val eventType: String,
-        val payload: Map<String, JsonElement>
+        @Contextual
+        val payload: JsonElement
     ) : StatusMessage()
 
     @Serializable
@@ -321,7 +330,7 @@ class SettingsWebServer(
             val allSettings = settingsRegistry.getAllSettings()
             sendToSession(
                 session,
-                StatusMessage.AllSettings(convertToJsonCompatibleMap(allSettings))
+                StatusMessage.AllSettings(allSettings.toJsonElement())
             )
 
             for (frame in session.incoming) {
@@ -358,7 +367,7 @@ class SettingsWebServer(
                 val allSettings = settingsRegistry.getAllSettings()
                 sendToSession(
                     session,
-                    StatusMessage.AllSettings(convertToJsonCompatibleMap(allSettings))
+                    StatusMessage.AllSettings(allSettings.toJsonElement())
                 )
             }
 
@@ -367,12 +376,15 @@ class SettingsWebServer(
                     primitive.booleanOrNull ?: primitive.intOrNull ?: primitive.doubleOrNull
                     ?: primitive.content
                 }
-                val success = if (message.category == "system") {
+                val success = if (message.appId == "system") {
                     settingsRegistry.updateSystemSetting(message.key, convertedValue)
                 } else {
-                    // For app settings, we'd need to parse the category to get appId
-                    // This is simplified - in a real implementation, the message format would include appId
-                    false
+                    settingsRegistry.updateAppSetting(
+                        message.appId,
+                        message.category,
+                        message.key,
+                        convertedValue
+                    )
                 }
 
                 if (!success) {
@@ -389,7 +401,7 @@ class SettingsWebServer(
             is SettingsMessage.ExecuteAction -> {
                 try {
                     Log.i(TAG, "Executing action: ${message.appId}.${message.action}")
-                    
+
                     // Convert JsonElement parameters to Map<String, Any>
                     val params = message.params.mapValues { (_, value) ->
                         value.jsonPrimitive.let { primitive ->
@@ -412,8 +424,8 @@ class SettingsWebServer(
         }
     }
 
-    private suspend fun broadcastSettingsUpdate(allSettings: Map<String, Any>) {
-        val message = StatusMessage.AllSettings(convertToJsonCompatibleMap(allSettings))
+    private suspend fun broadcastSettingsUpdate(allSettings: Map<String, Map<String, Any>>) {
+        val message = StatusMessage.AllSettings(allSettings.toJsonElement())
         broadcast(message)
     }
 
@@ -425,7 +437,7 @@ class SettingsWebServer(
         val message = StatusMessage.AppStatusUpdate(
             appId = appId,
             component = component,
-            data = convertValuesToJsonElements(payload)
+            data = payload.toJsonElement()
         )
         broadcast(message)
         Log.d(TAG, "Broadcasted app status update: $appId.$component")
@@ -435,7 +447,7 @@ class SettingsWebServer(
         val message = StatusMessage.AppEvent(
             appId = appId,
             eventType = eventType,
-            payload = convertValuesToJsonElements(payload)
+            payload = payload.toJsonElement()
         )
         broadcast(message)
         Log.d(TAG, "Broadcasted app event: $appId.$eventType")
@@ -462,53 +474,6 @@ class SettingsWebServer(
             session.send(Frame.Text(messageText))
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send message to WebSocket session", e)
-        }
-    }
-
-    private fun convertValuesToJsonElements(data: Map<String, Any?>): Map<String, JsonElement> {
-        return data.mapValues { (_, value) ->
-            when (value) {
-                null -> JsonPrimitive(null)
-                is Boolean -> JsonPrimitive(value)
-                is Number -> JsonPrimitive(value)
-                is String -> JsonPrimitive(value)
-                is List<*> -> {
-                    try {
-                        JsonPrimitive(Json.encodeToString(value))
-                    } catch (_: Exception) {
-                        JsonPrimitive(value.toString())
-                    }
-                }
-
-                is Map<*, *> -> {
-                    try {
-                        JsonPrimitive(Json.encodeToString(value))
-                    } catch (_: Exception) {
-                        JsonPrimitive(value.toString())
-                    }
-                }
-
-                else -> JsonPrimitive(value.toString())
-            }
-        }
-    }
-
-    private fun convertToJsonCompatibleMap(input: Map<String, Any>): Map<String, Map<String, JsonElement>> {
-        return input.mapValues { (_, value) ->
-            when (value) {
-                is Map<*, *> -> convertValuesToJsonElements(
-                    value.mapKeys { it.key.toString() }.mapValues { it.value ?: "" }
-                )
-
-                else -> mapOf(
-                    "value" to when (value) {
-                        is Boolean -> JsonPrimitive(value)
-                        is Number -> JsonPrimitive(value)
-                        is String -> JsonPrimitive(value)
-                        else -> JsonPrimitive(value.toString())
-                    }
-                )
-            }
         }
     }
 

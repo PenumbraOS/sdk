@@ -118,9 +118,15 @@ export class WebSocketService {
     }
   }
 
-  updateSetting(category: string, key: string, value: unknown): void {
+  updateSetting(
+    appId: string,
+    category: string,
+    key: string,
+    value: unknown
+  ): void {
     this.send({
       type: "updateSetting",
+      appId,
       category,
       key,
       value,
@@ -134,7 +140,11 @@ export class WebSocketService {
     });
   }
 
-  executeAction(appId: string, action: string, params: Record<string, unknown>): void {
+  executeAction(
+    appId: string,
+    action: string,
+    params: Record<string, unknown>
+  ): void {
     this.send({
       type: "executeAction",
       appId,

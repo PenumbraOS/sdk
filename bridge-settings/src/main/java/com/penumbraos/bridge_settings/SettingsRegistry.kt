@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
@@ -47,67 +46,14 @@ enum class LogLevel {
 
 interface SettingsActionProvider {
     suspend fun executeAction(action: String, params: Map<String, Any>): ActionResult
-    fun getActionDefinitions(): Map<String, ActionDefinition>
+    fun getActionDefinitions(): Map<String, LocalActionDefinition>
 }
-
-data class ActionDefinition(
-    val key: String,
-    val displayText: String,
-    val parameters: List<ActionParameter> = emptyList(),
-    val description: String? = null
-)
-
-data class ActionParameter(
-    val name: String,
-    val type: SettingType,
-    val required: Boolean = true,
-    val defaultValue: Any? = null,
-    val description: String? = null
-)
-
-data class SettingDefinition(
-    val key: String,
-    val type: SettingType,
-    val defaultValue: Any,
-    val validation: SettingValidation? = null
-)
-
-enum class SettingType {
-    BOOLEAN, INTEGER, STRING, FLOAT, ACTION
-}
-
-data class SettingValidation(
-    val min: Number? = null,
-    val max: Number? = null,
-    val allowedValues: List<Any>? = null,
-    val regex: String? = null
-)
-
-data class AppSettingsCategory(
-    val appId: String,
-    val category: String,
-    val definitions: Map<String, SettingDefinition>,
-    val values: MutableMap<String, Any> = mutableMapOf()
-)
-
-@Serializable
-data class PersistedSettings(
-    val systemSettings: Map<String, String> = emptyMap(),
-    val appSettings: Map<String, Map<String, Map<String, JsonElement>>> = emptyMap()
-)
-
-data class ExecutingAction(
-    val providerId: String,
-    val actionName: String, 
-    val params: Map<String, Any>,
-    val startTime: Long
-)
 
 class SettingsRegistry(private val context: Context, val shellClient: ShellClient) {
     private val appSettings = ConcurrentHashMap<String, MutableMap<String, AppSettingsCategory>>()
     private val systemSettings = ConcurrentHashMap<String, Any>()
     private val actionProviders = ConcurrentHashMap<String, SettingsActionProvider>()
-    
+
     // Execution state tracking
     @Volatile
     private var currentExecutingAction: ExecutingAction? = null
@@ -117,14 +63,14 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
     companion object {
         private const val EXECUTION_TIMEOUT_MS = 30000L // 30 seconds
     }
-    
+
     private fun startExecutionTimeout(appId: String, action: String) {
         clearState()
-        
+
         executionTimeoutRunnable = Runnable {
             Log.w(TAG, "Action execution timeout: $appId.$action")
             currentExecutingAction = null
-            
+
             // Broadcast timeout error
             registryScope.launch {
                 sendAppEvent(
@@ -132,20 +78,22 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                         "action" to action,
                         "success" to false,
                         "message" to "Action timed out after ${EXECUTION_TIMEOUT_MS / 1000} seconds",
-                        "logs" to listOf(mapOf<String, Any>(
-                            "timestamp" to System.currentTimeMillis(),
-                            "level" to "ERROR",
-                            "message" to "Action execution timeout"
-                        ))
+                        "logs" to listOf(
+                            mapOf<String, Any>(
+                                "timestamp" to System.currentTimeMillis(),
+                                "level" to "ERROR",
+                                "message" to "Action execution timeout"
+                            )
+                        )
                     )
                 )
             }
         }
-        
+
         executionTimeoutHandler.postDelayed(executionTimeoutRunnable!!, EXECUTION_TIMEOUT_MS)
         Log.d(TAG, "Started execution timeout for: $appId.$action")
     }
-    
+
     private fun clearState() {
         currentExecutingAction = null
         executionTimeoutRunnable?.let {
@@ -165,8 +113,8 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
     // Reference to web server for broadcasting (set by SettingsService)
     private var webServer: SettingsWebServer? = null
 
-    private val _settingsFlow = MutableStateFlow<Map<String, Any>>(emptyMap())
-    val settingsFlow: StateFlow<Map<String, Any>> = _settingsFlow.asStateFlow()
+    private val _settingsFlow = MutableStateFlow<Map<String, Map<String, Any>>>(emptyMap())
+    val settingsFlow: StateFlow<Map<String, Map<String, Any>>> = _settingsFlow.asStateFlow()
 
     @SuppressLint("SdCardPath")
     private val settingsFile = File("/sdcard/penumbra/etc/settings.json")
@@ -437,8 +385,8 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         return systemSettings.toMap()
     }
 
-    fun getAllSettings(): Map<String, Any> {
-        val result = mutableMapOf<String, Any>()
+    fun getAllSettings(): Map<String, Map<String, Any>> {
+        val result = mutableMapOf<String, Map<String, Any>>()
 
         // Add system settings
         result["system"] = systemSettings.toMap()
@@ -451,7 +399,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
             }
             result[appId] = appData
         }
-        
+
         // Add current execution status
         getCurrentExecutionStatus()?.let { executionStatus ->
             result["executionStatus"] = executionStatus
@@ -555,7 +503,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         // Broadcast available actions to web UI
         registryScope.launch {
             val actions = provider.getActionDefinitions()
-            sendAppEvent(appId, "actionsRegistered", mapOf<String, Any>("actions" to actions))
+            sendAppEvent(appId, "actionsRegistered", mapOf("actions" to actions))
         }
     }
 
@@ -570,7 +518,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         params: Map<String, Any>
     ): ActionResult {
         Log.i(TAG, "Executing action: $appId.$action with params: $params")
-        
+
         currentExecutingAction = ExecutingAction(appId, action, params, System.currentTimeMillis())
         startExecutionTimeout(appId, action)
 
@@ -596,7 +544,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                     "logs" to (errorResult.logs ?: emptyList())
                 )
             )
-            
+
             clearState()
 
             return errorResult
@@ -616,7 +564,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                     "logs" to (result.logs ?: emptyList())
                 )
             )
-            
+
             clearState()
 
             result
@@ -637,7 +585,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
                     "logs" to (errorResult.logs ?: emptyList())
                 )
             )
-            
+
             clearState()
 
             errorResult
@@ -647,7 +595,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
     fun getActionProvider(appId: String): SettingsActionProvider? {
         return actionProviders[appId]
     }
-    
+
     fun getCurrentExecutionStatus(): Map<String, Any>? {
         return currentExecutingAction?.let { action ->
             mapOf(

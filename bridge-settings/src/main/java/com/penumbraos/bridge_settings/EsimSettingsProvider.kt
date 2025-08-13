@@ -48,24 +48,24 @@ class EsimSettingsProvider(
         }
     }
 
-    override fun getActionDefinitions(): Map<String, ActionDefinition> {
+    override fun getActionDefinitions(): Map<String, LocalActionDefinition> {
         return mapOf(
-            "getProfiles" to ActionDefinition(
+            "getProfiles" to LocalActionDefinition(
                 key = "getProfiles",
                 displayText = "List eSIM Profiles",
                 description = "Retrieve all eSIM profiles on the device"
             ),
-            "getActiveProfile" to ActionDefinition(
+            "getActiveProfile" to LocalActionDefinition(
                 key = "getActiveProfile",
                 displayText = "Get Active Profile",
                 description = "Get the currently active eSIM profile"
             ),
-            "getEid" to ActionDefinition(
+            "getEid" to LocalActionDefinition(
                 key = "getEid",
                 displayText = "Get Device EID",
                 description = "Retrieve the device's embedded identity document (EID)"
             ),
-            "enableProfile" to ActionDefinition(
+            "enableProfile" to LocalActionDefinition(
                 key = "enableProfile",
                 displayText = "Enable Profile",
                 parameters = listOf(
@@ -78,7 +78,7 @@ class EsimSettingsProvider(
                 ),
                 description = "Enable an eSIM profile by ICCID"
             ),
-            "disableProfile" to ActionDefinition(
+            "disableProfile" to LocalActionDefinition(
                 key = "disableProfile",
                 displayText = "Disable Profile",
                 parameters = listOf(
@@ -91,7 +91,7 @@ class EsimSettingsProvider(
                 ),
                 description = "Disable an eSIM profile by ICCID"
             ),
-            "deleteProfile" to ActionDefinition(
+            "deleteProfile" to LocalActionDefinition(
                 key = "deleteProfile",
                 displayText = "Delete Profile",
                 parameters = listOf(
@@ -104,7 +104,7 @@ class EsimSettingsProvider(
                 ),
                 description = "Permanently delete an eSIM profile"
             ),
-            "setNickname" to ActionDefinition(
+            "setNickname" to LocalActionDefinition(
                 key = "setNickname",
                 displayText = "Set Profile Nickname",
                 parameters = listOf(
@@ -123,7 +123,7 @@ class EsimSettingsProvider(
                 ),
                 description = "Set a custom nickname for an eSIM profile"
             ),
-            "downloadProfile" to ActionDefinition(
+            "downloadProfile" to LocalActionDefinition(
                 key = "downloadProfile",
                 displayText = "Download Profile",
                 parameters = listOf(
@@ -136,7 +136,7 @@ class EsimSettingsProvider(
                 ),
                 description = "Download a new eSIM profile from activation code"
             ),
-            "downloadAndEnableProfile" to ActionDefinition(
+            "downloadAndEnableProfile" to LocalActionDefinition(
                 key = "downloadAndEnableProfile",
                 displayText = "Download & Enable Profile",
                 parameters = listOf(
