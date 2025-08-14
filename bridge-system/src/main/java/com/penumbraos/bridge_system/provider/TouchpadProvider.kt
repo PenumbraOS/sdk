@@ -12,6 +12,7 @@ import com.penumbraos.bridge.ITouchpadProvider
 
 private const val TOUCHPAD_MONITOR_NAME = "Humane Touchpad Monitor"
 private const val TOUCHPAD_DISPLAY_ID = 3344
+private const val TOUCHPAD_EVENT_SOURCE = 0x100008
 
 private const val TAG = "TouchpadProvider"
 
@@ -22,7 +23,7 @@ class TouchpadProvider(private val looper: Looper) :
     inner class EventListener(inputChannel: InputChannel) :
         InputEventReceiver(inputChannel, looper) {
         override fun onInputEvent(event: InputEvent?) {
-            if (event != null) {
+            if (event != null && event.isFromSource(TOUCHPAD_EVENT_SOURCE)) {
                 val callbacksToRemove = mutableListOf<ITouchpadCallback>()
                 callbacks.forEach { callback ->
                     safeCallback(TAG, {
