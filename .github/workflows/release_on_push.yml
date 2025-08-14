@@ -46,8 +46,40 @@ jobs:
           curl -L -o bridge-system/src/main/jniLibs/arm64-v8a/libgadget.so.xz https://github.com/frida/frida/releases/download/16.7.19/frida-gadget-16.7.19-android-arm64.so.xz
           xz --force --decompress bridge-system/src/main/jniLibs/arm64-v8a/libgadget.so.xz
 
+      - name: Generate version for build
+        run: |
+          TODAY=$(date +'%Y-%m-%d')
+          TODAY_CODE=$(date +'%Y%m%d')
+
+          # Get all existing releases for today (fetch more to avoid pagination issues)
+          EXISTING=$(gh release list --limit 100 --json tagName --jq '.[].tagName' | grep "^${TODAY}\." || echo "")
+
+          if [ -z "$EXISTING" ]; then
+            # No releases today, start with .0
+            BUILD_NUM=0
+          else
+            # Find highest build number for today
+            BUILD_NUM=$(echo "$EXISTING" | sed "s/^${TODAY}\.//" | sort -n | tail -1)
+            BUILD_NUM=$((BUILD_NUM + 1))
+          fi
+
+          echo "Existing releases for ${TODAY}: $EXISTING"
+          echo "Next build number: $BUILD_NUM"
+
+          VERSION_NAME="${TODAY}.${BUILD_NUM}"
+          VERSION_CODE="${TODAY_CODE}${BUILD_NUM}"
+
+          echo "Generated version name: $VERSION_NAME"
+          echo "Generated version code: $VERSION_CODE"
+
+          # Set environment variables for subsequent steps
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build Release APKs
-        run: ./gradlew :bridge-core:assembleRelease :bridge-system:assembleRelease :bridge-shell:assembleRelease :bridge-settings:assembleRelease
+        run: ./gradlew :bridge-core:assembleRelease :bridge-system:assembleRelease :bridge-shell:assembleRelease :bridge-settings:assembleRelease -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE"
 
       - name: Rename APK files
         run: |
@@ -55,10 +87,10 @@ jobs:
           mkdir -p release-artifacts
 
           # Rename actual APKs
-          cp bridge-core/build/outputs/apk/release/bridge-core-release.apk release-artifacts/SDK-Bridge-Core.apk
-          cp bridge-system/build/outputs/apk/release/bridge-system-release.apk release-artifacts/SDK-Bridge-System.apk
-          cp bridge-shell/build/outputs/apk/release/bridge-shell-release.apk release-artifacts/SDK-Bridge-Shell.apk
-          cp bridge-settings/build/outputs/apk/release/bridge-settings-release.apk release-artifacts/SDK-Bridge-Settings.apk
+          cp bridge-core/build/outputs/apk/release/bridge-core-release.apk release-artifacts/PenumbraOS-SDK-Bridge-Core-${VERSION_NAME}.apk
+          cp bridge-system/build/outputs/apk/release/bridge-system-release.apk release-artifacts/PenumbraOS-SDK-Bridge-System-${VERSION_NAME}.apk
+          cp bridge-shell/build/outputs/apk/release/bridge-shell-release.apk release-artifacts/PenumbraOS-SDK-Bridge-Shell-${VERSION_NAME}.apk
+          cp bridge-settings/build/outputs/apk/release/bridge-settings-release.apk release-artifacts/PenumbraOS-SDK-Bridge-Settings-${VERSION_NAME}.apk
 
       - name: Generate version tag
         id: version
@@ -89,8 +121,8 @@ jobs:
       - name: Create Prerelease
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Alpha ${{ steps.version.outputs.tag }}
+          tag_name: ${{ env.VERSION_NAME }}
+          name: Alpha ${{ env.VERSION_NAME }}
           prerelease: true
           generate_release_notes: true
           files: release-artifacts/*
