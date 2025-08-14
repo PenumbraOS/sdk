@@ -1,5 +1,6 @@
 package com.penumbraos.bridge_settings
 
+import android.content.SharedPreferences
 import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.appprocessmocks.MockContext
@@ -14,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.io.File
 
 private const val TAG = "SettingsService"
 
@@ -35,6 +37,22 @@ class SettingsService {
                 val context =
                     MockContext.createWithAppContext(classLoader, thread, "com.android.settings")
 
+                val settingsFile = File("/data/misc/user/0/penumbra/settings.xml")
+                settingsFile.mkdirs()
+
+                val contextImplClass = classLoader.loadClass("android.app.ContextImpl")
+                val getSharedPreferencesByFileMethod = contextImplClass.getDeclaredMethod(
+                    "getSharedPreferences",
+                    File::class.java, Int::class.java
+                )
+                getSharedPreferencesByFileMethod.isAccessible = true
+
+                val sharedPreferences =
+                    getSharedPreferencesByFileMethod.invoke(
+                        context.baseContext,
+                        settingsFile, 2
+                    ) as SharedPreferences
+
                 // Connect to bridge and get ShellClient
                 val bridge = connectToBridge(TAG, context)
                 Log.i(TAG, "Connected to bridge-core")
@@ -46,7 +64,7 @@ class SettingsService {
                 Log.i(TAG, "Created ShellClient")
 
                 // Initialize components with context and shell client
-                settingsRegistry = SettingsRegistry(context, shellClient)
+                settingsRegistry = SettingsRegistry(context, sharedPreferences, shellClient)
                 settingsRegistry.initialize()
                 settingsProvider = SettingsProvider(settingsRegistry)
 

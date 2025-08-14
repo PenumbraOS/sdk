@@ -424,7 +424,7 @@ class SettingsWebServer(
         }
     }
 
-    private suspend fun broadcastSettingsUpdate(allSettings: Map<String, Map<String, Any>>) {
+    private suspend fun broadcastSettingsUpdate(allSettings: Map<String, Map<String, Any?>>) {
         val message = StatusMessage.AllSettings(allSettings.toJsonElement())
         broadcast(message)
     }
@@ -443,7 +443,7 @@ class SettingsWebServer(
         Log.d(TAG, "Broadcasted app status update: $appId.$component")
     }
 
-    suspend fun broadcastAppEvent(appId: String, eventType: String, payload: Map<String, Any>) {
+    suspend fun broadcastAppEvent(appId: String, eventType: String, payload: Map<String, Any?>) {
         val message = StatusMessage.AppEvent(
             appId = appId,
             eventType = eventType,

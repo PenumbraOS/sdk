@@ -1,7 +1,7 @@
 package com.penumbraos.bridge_settings
 
-import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
@@ -16,16 +16,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.booleanOrNull
-import kotlinx.serialization.json.doubleOrNull
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonPrimitive
-import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 private const val TAG = "SettingsRegistry"
+
+private const val SYSTEM_SETTINGS_APP_ID = "penumbra_system"
 
 data class ActionResult(
     val success: Boolean,
@@ -49,9 +44,13 @@ interface SettingsActionProvider {
     fun getActionDefinitions(): Map<String, LocalActionDefinition>
 }
 
-class SettingsRegistry(private val context: Context, val shellClient: ShellClient) {
+class SettingsRegistry(
+    private val context: Context,
+    private val sharedPreferences: SharedPreferences,
+    shellClient: ShellClient
+) {
     private val appSettings = ConcurrentHashMap<String, MutableMap<String, AppSettingsCategory>>()
-    private val systemSettings = ConcurrentHashMap<String, Any>()
+    private val systemSettings = ConcurrentHashMap<String, Any?>()
     private val actionProviders = ConcurrentHashMap<String, SettingsActionProvider>()
 
     // Execution state tracking
@@ -102,9 +101,6 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         }
     }
 
-    // Store saved app settings values until apps register their schemas
-    private val savedAppSettingsValues =
-        ConcurrentHashMap<String, ConcurrentHashMap<String, Map<String, JsonElement>>>()
 
     private val humaneDisplayController = HumaneDisplayController(shellClient)
     private val temperatureController = TemperatureController(shellClient)
@@ -113,11 +109,9 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
     // Reference to web server for broadcasting (set by SettingsService)
     private var webServer: SettingsWebServer? = null
 
-    private val _settingsFlow = MutableStateFlow<Map<String, Map<String, Any>>>(emptyMap())
-    val settingsFlow: StateFlow<Map<String, Map<String, Any>>> = _settingsFlow.asStateFlow()
+    private val _settingsFlow = MutableStateFlow<Map<String, Map<String, Any?>>>(emptyMap())
+    val settingsFlow: StateFlow<Map<String, Map<String, Any?>>> = _settingsFlow.asStateFlow()
 
-    @SuppressLint("SdCardPath")
-    private val settingsFile = File("/sdcard/penumbra/etc/settings.json")
     private val json = Json {
         prettyPrint = true
         ignoreUnknownKeys = true
@@ -142,30 +136,16 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
 
     private fun loadSavedSettings() {
         try {
-            if (settingsFile.exists()) {
-                val persistedData =
-                    json.decodeFromString<PersistedSettings>(settingsFile.readText())
-
-                // Load non-Android system settings
-                persistedData.systemSettings.forEach { (key, value) ->
+            sharedPreferences.all.filter { it.key.startsWith(SYSTEM_SETTINGS_APP_ID) }
+                .forEach { (key, value) ->
                     if (!isAndroidSystemSetting(key)) {
-                        systemSettings[key] = value // Keep as string
+                        systemSettings[key] = value
                     }
                 }
 
-                // Load app settings values (without schemas - will be merged when apps register)
-                persistedData.appSettings.forEach { (appId, categories) ->
-                    val appSavedValues =
-                        savedAppSettingsValues.getOrPut(appId) { ConcurrentHashMap() }
-                    categories.forEach { (category, settingValues) ->
-                        appSavedValues[category] = settingValues
-                    }
-                }
-
-                Log.i(TAG, "Loaded settings from ${settingsFile.absolutePath}")
-            }
+            Log.i(TAG, "Loaded settings from SharedPreferences")
         } catch (e: Exception) {
-            Log.w(TAG, "Failed to load settings from file", e)
+            Log.w(TAG, "Failed to load settings from SharedPreferences", e)
         }
     }
 
@@ -288,26 +268,22 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         category: String,
         definitions: Map<String, SettingDefinition>
     ) {
+        if (appId.startsWith(SYSTEM_SETTINGS_APP_ID)) {
+            throw IllegalArgumentException("Cannot register system settings")
+        }
+
         Log.i(TAG, "Registering settings for app: $appId, category: $category")
 
         val appCategories = appSettings.getOrPut(appId) { mutableMapOf() }
         val settingsCategory = AppSettingsCategory(appId, category, definitions)
 
-        // Initialize with default values
         definitions.forEach { (key, definition) ->
-            settingsCategory.values[key] = definition.defaultValue
-        }
-
-        // Merge in any previously saved values for this app/category
-        savedAppSettingsValues[appId]?.get(category)?.forEach { (key, jsonValue) ->
-            if (definitions.containsKey(key)) {
-                // Convert JsonElement back to proper type
-                val convertedValue = jsonValue.jsonPrimitive.let { primitive ->
-                    primitive.booleanOrNull ?: primitive.intOrNull ?: primitive.doubleOrNull
-                    ?: primitive.content
-                }
-                settingsCategory.values[key] = convertedValue
-                Log.d(TAG, "Restored saved value for $appId.$category.$key = $convertedValue")
+            val fullKey = "$appId.$category.$key"
+            val savedValue = sharedPreferences.all[fullKey]
+            if (savedValue != null) {
+                settingsCategory.values[key] = savedValue
+            } else {
+                settingsCategory.values[key] = definition.defaultValue
             }
         }
 
@@ -336,8 +312,8 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
 
         settingsCategory.values[key] = value
 
-        // Save app settings to file
-        saveSettings()
+        // Save this specific app setting immediately
+        saveAppSetting(appId, category, key, value)
 
         updateSettingsFlow()
         Log.i(TAG, "Updated app setting: $appId.$category.$key = $value")
@@ -366,7 +342,7 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
             if (success) {
                 if (!isAndroidSystemSetting(key)) {
                     systemSettings[key] = value
-                    saveSettings()
+                    saveSystemSetting(key, value)
                 }
 
                 updateSettingsFlow()
@@ -381,12 +357,12 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         return systemSettings[key]
     }
 
-    fun getAllSystemSettings(): Map<String, Any> {
+    fun getAllSystemSettings(): Map<String, Any?> {
         return systemSettings.toMap()
     }
 
-    fun getAllSettings(): Map<String, Map<String, Any>> {
-        val result = mutableMapOf<String, Map<String, Any>>()
+    fun getAllSettings(): Map<String, Map<String, Any?>> {
+        val result = mutableMapOf<String, Map<String, Any?>>()
 
         // Add system settings
         result["system"] = systemSettings.toMap()
@@ -444,44 +420,40 @@ class SettingsRegistry(private val context: Context, val shellClient: ShellClien
         }
     }
 
-    private fun saveSettings() {
+    private fun SharedPreferences.Editor.putValue(key: String, value: Any) {
+        when (value) {
+            is Boolean -> putBoolean(key, value)
+            is Int -> putInt(key, value)
+            is Long -> putLong(key, value)
+            is Float -> putFloat(key, value)
+            is String -> putString(key, value)
+            else -> putString(key, value.toString())
+        }
+    }
+
+    private fun saveSystemSetting(key: String, value: Any) {
+        val fullKey = "$SYSTEM_SETTINGS_APP_ID.$key"
         try {
-            // Create directory if it doesn't exist
-            settingsFile.parentFile?.mkdirs()
-
-            // Collect non-Android system settings for persistence
-            val systemSettingsToSave = systemSettings
-                .filterKeys { !isAndroidSystemSetting(it) }
-                .mapValues { it.value.toString() }
-
-            // Serialize app settings
-            val appSettingsToSave = mutableMapOf<String, Map<String, Map<String, JsonElement>>>()
-            appSettings.forEach { (appId, categories) ->
-                val categoriesMap = mutableMapOf<String, Map<String, JsonElement>>()
-                categories.forEach { (category, categoryData) ->
-                    val valuesMap = mutableMapOf<String, JsonElement>()
-                    categoryData.values.forEach { (key, value) ->
-                        valuesMap[key] = when (value) {
-                            is Boolean -> JsonPrimitive(value)
-                            is Number -> JsonPrimitive(value)
-                            is String -> JsonPrimitive(value)
-                            else -> JsonPrimitive(value.toString())
-                        }
-                    }
-                    categoriesMap[category] = valuesMap
-                }
-                appSettingsToSave[appId] = categoriesMap
+            sharedPreferences.edit().apply {
+                putValue(fullKey, value)
+                apply()
             }
-
-            val persistedData = PersistedSettings(
-                systemSettings = systemSettingsToSave,
-                appSettings = appSettingsToSave
-            )
-
-            settingsFile.writeText(json.encodeToString(persistedData))
-            Log.d(TAG, "Settings saved to ${settingsFile.absolutePath}")
+            Log.d(TAG, "Saved system setting: $fullKey = $value")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to save settings to file", e)
+            Log.e(TAG, "Failed to save system setting $fullKey", e)
+        }
+    }
+
+    private fun saveAppSetting(appId: String, category: String, key: String, value: Any) {
+        val fullKey = "$appId.$category.$key"
+        try {
+            sharedPreferences.edit().apply {
+                putValue(fullKey, value)
+                apply()
+            }
+            Log.d(TAG, "Saved app setting: $fullKey = $value")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save app setting $fullKey", e)
         }
     }
 
