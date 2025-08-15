@@ -11,6 +11,7 @@ import com.penumbraos.bridge_system.esim.LPA_APK_PATH
 import com.penumbraos.bridge_system.esim.MockFactoryService
 import com.penumbraos.bridge_system.provider.DnsProvider
 import com.penumbraos.bridge_system.provider.EsimProvider
+import com.penumbraos.bridge_system.provider.HandGestureProvider
 import com.penumbraos.bridge_system.provider.HandTrackingProvider
 import com.penumbraos.bridge_system.provider.HttpProvider
 import com.penumbraos.bridge_system.provider.LedProvider
@@ -71,6 +72,7 @@ class Entrypoint {
                         SttProvider(context, looper),
                         TouchpadProvider(looper),
                         LedProvider(context),
+                        HandGestureProvider(looper),
                         HandTrackingProvider(context),
                         EsimProvider(classLoader, context)
                     )

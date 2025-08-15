@@ -16,6 +16,7 @@ class BridgeService {
 
     private var touchpadProvider: ITouchpadProvider? = null
     private var ledProvider: ILedProvider? = null
+    private var handGestureProvider: IHandGestureProvider? = null
     private var handTrackingProvider: IHandTrackingProvider? = null
 
     private var esimProvider: IEsimProvider? = null
@@ -48,6 +49,10 @@ class BridgeService {
             return this@BridgeService.ledProvider?.asBinder()
         }
 
+        override fun getHandGestureProvider(): IBinder? {
+            return this@BridgeService.handGestureProvider?.asBinder()
+        }
+
         override fun getHandTrackingProvider(): IBinder? {
             return this@BridgeService.handTrackingProvider?.asBinder()
         }
@@ -71,6 +76,7 @@ class BridgeService {
             sttProvider: ISttProvider?,
             touchpadProvider: ITouchpadProvider?,
             ledProvider: ILedProvider?,
+            handGestureProvider: IHandGestureProvider?,
             handTrackingProvider: IHandTrackingProvider?,
             esimProvider: IEsimProvider?
         ) {
@@ -83,6 +89,7 @@ class BridgeService {
 
             this@BridgeService.touchpadProvider = touchpadProvider
             this@BridgeService.ledProvider = ledProvider
+            this@BridgeService.handGestureProvider = handGestureProvider
             this@BridgeService.handTrackingProvider = handTrackingProvider
 
             this@BridgeService.esimProvider = esimProvider

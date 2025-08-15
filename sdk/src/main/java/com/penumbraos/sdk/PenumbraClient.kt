@@ -9,6 +9,8 @@ import android.os.IBinder
 import android.util.Log
 import com.penumbraos.bridge.IBridge
 import com.penumbraos.bridge.IDnsProvider
+import com.penumbraos.bridge.IEsimProvider
+import com.penumbraos.bridge.IHandGestureProvider
 import com.penumbraos.bridge.IHandTrackingProvider
 import com.penumbraos.bridge.IHttpProvider
 import com.penumbraos.bridge.ILedProvider
@@ -17,10 +19,10 @@ import com.penumbraos.bridge.IShellProvider
 import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
-import com.penumbraos.bridge.IEsimProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
 import com.penumbraos.sdk.api.DnsClient
 import com.penumbraos.sdk.api.EsimClient
+import com.penumbraos.sdk.api.HandGestureClient
 import com.penumbraos.sdk.api.HandTrackingClient
 import com.penumbraos.sdk.api.HttpClient
 import com.penumbraos.sdk.api.LedClient
@@ -49,6 +51,7 @@ class PenumbraClient {
 
     lateinit var touchpad: TouchpadClient
     lateinit var led: LedClient
+    lateinit var handGesture: HandGestureClient
     lateinit var handTracking: HandTrackingClient
 
     lateinit var esim: EsimClient
@@ -125,10 +128,12 @@ class PenumbraClient {
             val touchpadProvider =
                 ITouchpadProvider.Stub.asInterface(service!!.getTouchpadProvider())
             val ledProvider = ILedProvider.Stub.asInterface(service!!.getLedProvider())
+            val handGestureProvider =
+                IHandGestureProvider.Stub.asInterface(service!!.getHandGestureProvider())
             val handTrackingProvider =
                 IHandTrackingProvider.Stub.asInterface(service!!.getHandTrackingProvider())
 
-            val esimProvider = 
+            val esimProvider =
                 IEsimProvider.Stub.asInterface(service!!.getEsimProvider())
 
             val settingsProvider =
@@ -145,6 +150,7 @@ class PenumbraClient {
 
             touchpad = TouchpadClient(touchpadProvider)
             led = LedClient(ledProvider)
+            handGesture = HandGestureClient(handGestureProvider)
             handTracking = HandTrackingClient(handTrackingProvider)
 
             esim = EsimClient(esimProvider)
