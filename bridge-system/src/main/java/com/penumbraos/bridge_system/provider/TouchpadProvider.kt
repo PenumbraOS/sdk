@@ -7,8 +7,8 @@ import android.util.Log
 import android.view.InputChannel
 import android.view.InputEvent
 import android.view.InputEventReceiver
-import com.penumbraos.bridge.ITouchpadCallback
 import com.penumbraos.bridge.ITouchpadProvider
+import com.penumbraos.bridge.callback.ITouchpadCallback
 
 private const val TOUCHPAD_MONITOR_NAME = "Humane Touchpad Monitor"
 private const val TOUCHPAD_DISPLAY_ID = 3344
@@ -23,7 +23,7 @@ class TouchpadProvider(private val looper: Looper) :
     inner class EventListener(inputChannel: InputChannel) :
         InputEventReceiver(inputChannel, looper) {
         override fun onInputEvent(event: InputEvent?) {
-            if (event != null && event.isFromSource(TOUCHPAD_EVENT_SOURCE)) {
+            if (event != null) {
                 val callbacksToRemove = mutableListOf<ITouchpadCallback>()
                 callbacks.forEach { callback ->
                     safeCallback(TAG, {

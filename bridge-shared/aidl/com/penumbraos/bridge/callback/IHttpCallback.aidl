@@ -1,4 +1,4 @@
-package com.penumbraos.bridge;
+package com.penumbraos.bridge.callback;
 
 interface IHttpCallback {
     oneway void onHeaders(String requestId, int statusCode, in Map headers);

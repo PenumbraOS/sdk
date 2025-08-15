@@ -1,8 +1,8 @@
 package com.penumbraos.sdk.api
 
 import android.view.InputEvent
-import com.penumbraos.bridge.ITouchpadCallback
 import com.penumbraos.bridge.ITouchpadProvider
+import com.penumbraos.bridge.callback.ITouchpadCallback
 import com.penumbraos.sdk.api.types.TouchpadInputReceiver
 import java.util.concurrent.ConcurrentHashMap
 

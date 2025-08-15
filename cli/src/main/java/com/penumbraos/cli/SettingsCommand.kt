@@ -5,8 +5,8 @@ import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.appprocessmocks.MockContext
 import com.penumbraos.bridge.IBridge
-import com.penumbraos.bridge.ISettingsCallback
 import com.penumbraos.bridge.ISettingsProvider
+import com.penumbraos.bridge.callback.ISettingsCallback
 import com.penumbraos.bridge.external.connectToBridge
 import kotlinx.coroutines.*
 import kotlin.coroutines.resume

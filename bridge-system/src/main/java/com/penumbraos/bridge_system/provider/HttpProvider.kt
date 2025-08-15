@@ -1,8 +1,8 @@
 package com.penumbraos.bridge_system.provider
 
 import android.util.Log
-import com.penumbraos.bridge.IHttpCallback
 import com.penumbraos.bridge.IHttpProvider
+import com.penumbraos.bridge.callback.IHttpCallback
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient

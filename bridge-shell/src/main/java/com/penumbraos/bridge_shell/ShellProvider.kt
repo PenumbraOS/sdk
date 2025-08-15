@@ -1,8 +1,8 @@
 package com.penumbraos.bridge_shell
 
 import android.util.Log
-import com.penumbraos.bridge.IShellCallback
 import com.penumbraos.bridge.IShellProvider
+import com.penumbraos.bridge.callback.IShellCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -10,13 +10,12 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
-import java.util.concurrent.TimeUnit
 
 private const val TAG = "ShellProvider"
 private const val DEFAULT_TIMEOUT_MS = 30000
 
 class ShellProvider : IShellProvider.Stub() {
-    
+
     private val scope = CoroutineScope(Dispatchers.IO)
 
     override fun executeCommand(
@@ -45,10 +44,10 @@ class ShellProvider : IShellProvider.Stub() {
         callback: IShellCallback
     ) {
         Log.d(TAG, "Executing command: $command")
-        
+
         try {
             val processBuilder = ProcessBuilder("/bin/sh", "-c", command)
-            
+
             workingDirectory?.let { wd ->
                 val workDir = File(wd)
                 if (workDir.exists() && workDir.isDirectory) {
@@ -62,7 +61,7 @@ class ShellProvider : IShellProvider.Stub() {
             }
 
             val process = processBuilder.start()
-            
+
             val result = withTimeoutOrNull(timeoutMs.toLong()) {
                 val outputReader = BufferedReader(InputStreamReader(process.inputStream))
                 val errorReader = BufferedReader(InputStreamReader(process.errorStream))
@@ -99,10 +98,10 @@ class ShellProvider : IShellProvider.Stub() {
                 errorThread.start()
 
                 val exitCode = process.waitFor()
-                
+
                 outputThread.join()
                 errorThread.join()
-                
+
                 exitCode
             }
 
@@ -117,7 +116,7 @@ class ShellProvider : IShellProvider.Stub() {
                     callback.onComplete(-1)
                 }
             }
-            
+
         } catch (e: Exception) {
             Log.e(TAG, "Error executing command", e)
             safeCallback {

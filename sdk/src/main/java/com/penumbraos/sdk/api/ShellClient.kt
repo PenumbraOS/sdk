@@ -1,8 +1,8 @@
 package com.penumbraos.sdk.api
 
 import android.util.Log
-import com.penumbraos.bridge.IShellCallback
 import com.penumbraos.bridge.IShellProvider
+import com.penumbraos.bridge.callback.IShellCallback
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -12,7 +12,7 @@ private const val TAG = "ShellClient"
 class ShellClient(private val provider: IShellProvider) {
 
     suspend fun executeCommand(
-        command: String, 
+        command: String,
         workingDirectory: String? = null
     ): ShellResult = withContext(Dispatchers.IO) {
         val result = CompletableDeferred<ShellResult>()

@@ -1,7 +1,7 @@
 package com.penumbraos.sdk.api.types
 
 import android.os.Bundle
-import com.penumbraos.bridge.ISttRecognitionListener
+import com.penumbraos.bridge.callback.ISttRecognitionListener
 
 abstract class SttRecognitionListener : ISttRecognitionListener.Stub() {
     override fun onReadyForSpeech(params: Bundle?) {}

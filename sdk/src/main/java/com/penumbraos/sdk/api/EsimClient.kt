@@ -1,8 +1,8 @@
 package com.penumbraos.sdk.api
 
 import android.util.Log
-import com.penumbraos.bridge.IEsimCallback
 import com.penumbraos.bridge.IEsimProvider
+import com.penumbraos.bridge.callback.IEsimCallback
 import com.penumbraos.bridge.types.EsimOperationResult
 import com.penumbraos.bridge.types.EsimProfile
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -35,7 +35,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.getProfiles(callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call getProfiles: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call getProfiles: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -67,7 +72,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.getActiveProfile(callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call getActiveProfile: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call getActiveProfile: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -99,7 +109,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.getActiveProfileIccid(callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call getActiveProfileIccid: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call getActiveProfileIccid: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -135,7 +150,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.getEid(callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call getEid: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call getEid: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -153,7 +173,10 @@ class EsimClient(private val provider: IEsimProvider) {
                 override fun onEid(eid: String?) {}
 
                 override fun onOperationResult(result: EsimOperationResult?) {
-                    Log.d(TAG, "Enable profile operation result: ${result?.operation} - success: ${result?.success}")
+                    Log.d(
+                        TAG,
+                        "Enable profile operation result: ${result?.operation} - success: ${result?.success}"
+                    )
                     if (result != null) {
                         continuation.resume(result)
                     } else {
@@ -170,7 +193,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.enableProfile(iccid, callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call enableProfile: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call enableProfile: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -188,7 +216,10 @@ class EsimClient(private val provider: IEsimProvider) {
                 override fun onEid(eid: String?) {}
 
                 override fun onOperationResult(result: EsimOperationResult?) {
-                    Log.d(TAG, "Disable profile operation result: ${result?.operation} - success: ${result?.success}")
+                    Log.d(
+                        TAG,
+                        "Disable profile operation result: ${result?.operation} - success: ${result?.success}"
+                    )
                     if (result != null) {
                         continuation.resume(result)
                     } else {
@@ -205,7 +236,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.disableProfile(iccid, callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call disableProfile: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call disableProfile: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -223,7 +259,10 @@ class EsimClient(private val provider: IEsimProvider) {
                 override fun onEid(eid: String?) {}
 
                 override fun onOperationResult(result: EsimOperationResult?) {
-                    Log.d(TAG, "Delete profile operation result: ${result?.operation} - success: ${result?.success}")
+                    Log.d(
+                        TAG,
+                        "Delete profile operation result: ${result?.operation} - success: ${result?.success}"
+                    )
                     if (result != null) {
                         continuation.resume(result)
                     } else {
@@ -240,7 +279,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.deleteProfile(iccid, callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call deleteProfile: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call deleteProfile: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -258,7 +302,10 @@ class EsimClient(private val provider: IEsimProvider) {
                 override fun onEid(eid: String?) {}
 
                 override fun onOperationResult(result: EsimOperationResult?) {
-                    Log.d(TAG, "Set nickname operation result: ${result?.operation} - success: ${result?.success}")
+                    Log.d(
+                        TAG,
+                        "Set nickname operation result: ${result?.operation} - success: ${result?.success}"
+                    )
                     if (result != null) {
                         continuation.resume(result)
                     } else {
@@ -275,7 +322,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.setNickname(iccid, nickname, callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call setNickname: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call setNickname: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -293,7 +345,10 @@ class EsimClient(private val provider: IEsimProvider) {
                 override fun onEid(eid: String?) {}
 
                 override fun onOperationResult(result: EsimOperationResult?) {
-                    Log.d(TAG, "Download profile operation result: ${result?.operation} - success: ${result?.success}")
+                    Log.d(
+                        TAG,
+                        "Download profile operation result: ${result?.operation} - success: ${result?.success}"
+                    )
                     if (result != null) {
                         continuation.resume(result)
                     } else {
@@ -310,7 +365,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.downloadProfile(activationCode, callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call downloadProfile: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call downloadProfile: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -328,7 +388,10 @@ class EsimClient(private val provider: IEsimProvider) {
                 override fun onEid(eid: String?) {}
 
                 override fun onOperationResult(result: EsimOperationResult?) {
-                    Log.d(TAG, "Download and enable profile operation result: ${result?.operation} - success: ${result?.success}")
+                    Log.d(
+                        TAG,
+                        "Download and enable profile operation result: ${result?.operation} - success: ${result?.success}"
+                    )
                     if (result != null) {
                         continuation.resume(result)
                     } else {
@@ -345,7 +408,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.downloadAndEnableProfile(activationCode, callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call downloadAndEnableProfile: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call downloadAndEnableProfile: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {
@@ -363,7 +431,10 @@ class EsimClient(private val provider: IEsimProvider) {
                 override fun onEid(eid: String?) {}
 
                 override fun onOperationResult(result: EsimOperationResult?) {
-                    Log.d(TAG, "Download, verify and enable profile operation result: ${result?.operation} - success: ${result?.success}")
+                    Log.d(
+                        TAG,
+                        "Download, verify and enable profile operation result: ${result?.operation} - success: ${result?.success}"
+                    )
                     if (result != null) {
                         continuation.resume(result)
                     } else {
@@ -380,7 +451,12 @@ class EsimClient(private val provider: IEsimProvider) {
             try {
                 provider.downloadVerifyAndEnableProfile(activationCode, callback)
             } catch (e: Exception) {
-                continuation.resumeWithException(EsimException("Failed to call downloadVerifyAndEnableProfile: ${e.message}", e))
+                continuation.resumeWithException(
+                    EsimException(
+                        "Failed to call downloadVerifyAndEnableProfile: ${e.message}",
+                        e
+                    )
+                )
             }
 
             continuation.invokeOnCancellation {

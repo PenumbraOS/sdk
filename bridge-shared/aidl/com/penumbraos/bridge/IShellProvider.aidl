@@ -1,6 +1,6 @@
 package com.penumbraos.bridge;
 
-import com.penumbraos.bridge.IShellCallback;
+import com.penumbraos.bridge.callback.IShellCallback;
 
 interface IShellProvider {
     void executeCommand(String command, String workingDirectory, IShellCallback callback);

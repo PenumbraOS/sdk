@@ -1,4 +1,4 @@
-package com.penumbraos.bridge;
+package com.penumbraos.bridge.callback;
 
 interface ISttRecognitionListener {
     void onReadyForSpeech(in Bundle params);

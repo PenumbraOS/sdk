@@ -1,4 +1,4 @@
-package com.penumbraos.bridge;
+package com.penumbraos.bridge.callback;
 
 interface IShellCallback {
     void onOutput(String output);

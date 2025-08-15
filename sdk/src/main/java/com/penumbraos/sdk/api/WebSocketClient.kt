@@ -1,7 +1,7 @@
 package com.penumbraos.sdk.api
 
-import com.penumbraos.bridge.IWebSocketCallback
 import com.penumbraos.bridge.IWebSocketProvider
+import com.penumbraos.bridge.callback.IWebSocketCallback
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.resume

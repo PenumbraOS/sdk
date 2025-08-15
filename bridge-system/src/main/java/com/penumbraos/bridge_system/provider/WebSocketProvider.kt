@@ -1,8 +1,8 @@
 package com.penumbraos.bridge_system.provider
 
 import android.util.Log
-import com.penumbraos.bridge.IWebSocketCallback
 import com.penumbraos.bridge.IWebSocketProvider
+import com.penumbraos.bridge.callback.IWebSocketCallback
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response

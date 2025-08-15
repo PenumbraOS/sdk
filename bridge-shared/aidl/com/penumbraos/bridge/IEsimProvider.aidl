@@ -1,6 +1,6 @@
 package com.penumbraos.bridge;
 
-import com.penumbraos.bridge.IEsimCallback;
+import com.penumbraos.bridge.callback.IEsimCallback;
 
 interface IEsimProvider {
     void getProfiles(IEsimCallback callback);

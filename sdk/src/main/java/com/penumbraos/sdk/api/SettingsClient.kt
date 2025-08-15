@@ -1,8 +1,8 @@
 package com.penumbraos.sdk.api
 
 import android.util.Log
-import com.penumbraos.bridge.ISettingsCallback
 import com.penumbraos.bridge.ISettingsProvider
+import com.penumbraos.bridge.callback.ISettingsCallback
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -40,7 +40,14 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                         Log.e(TAG, "Settings registration error: $message")
                         continuation.resumeWithException(SettingsException(message))
                     }
-                    override fun onActionResult(appId: String, action: String, success: Boolean, message: String, data: Map<*, *>) {
+
+                    override fun onActionResult(
+                        appId: String,
+                        action: String,
+                        success: Boolean,
+                        message: String,
+                        data: Map<*, *>
+                    ) {
                         Log.d(TAG, "Action result: $appId.$action success=$success")
                     }
                 }

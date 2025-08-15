@@ -1,8 +1,8 @@
 package com.penumbraos.sdk.api
 
 import android.util.Log
-import com.penumbraos.bridge.IHttpCallback
 import com.penumbraos.bridge.IHttpProvider
+import com.penumbraos.bridge.callback.IHttpCallback
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow

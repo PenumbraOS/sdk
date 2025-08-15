@@ -1,4 +1,4 @@
-package com.penumbraos.bridge;
+package com.penumbraos.bridge.callback;
 
 interface IWebSocketCallback {
     oneway void onOpen(String requestId, in Map headers);

@@ -1,8 +1,8 @@
 package com.penumbraos.bridge_settings
 
 import android.util.Log
-import com.penumbraos.bridge.ISettingsCallback
 import com.penumbraos.bridge.ISettingsProvider
+import com.penumbraos.bridge.callback.ISettingsCallback
 import com.penumbraos.bridge_settings.providers.safeCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

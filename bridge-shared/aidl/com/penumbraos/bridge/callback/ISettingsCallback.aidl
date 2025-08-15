@@ -1,4 +1,4 @@
-package com.penumbraos.bridge;
+package com.penumbraos.bridge.callback;
 
 interface ISettingsCallback {
     void onSettingChanged(String appId, String category, String key, String value);

@@ -1,6 +1,6 @@
 package com.penumbraos.bridge;
 
-import com.penumbraos.bridge.ISettingsCallback;
+import com.penumbraos.bridge.callback.ISettingsCallback;
 import com.penumbraos.bridge.types.SystemSettingInfo;
 import com.penumbraos.bridge.types.ActionDefinition;
 import com.penumbraos.bridge.types.AppActionInfo;

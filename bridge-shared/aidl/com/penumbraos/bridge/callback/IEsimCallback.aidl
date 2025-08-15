@@ -1,4 +1,4 @@
-package com.penumbraos.bridge;
+package com.penumbraos.bridge.callback;
 
 import com.penumbraos.bridge.types.EsimProfile;
 import com.penumbraos.bridge.types.EsimOperationResult;
