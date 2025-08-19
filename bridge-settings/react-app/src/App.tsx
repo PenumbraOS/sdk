@@ -5,6 +5,7 @@ import SystemSettings from "./components/SystemSettings";
 import { AppSettings } from "./components/AppSettings";
 import MABLStatus from "./components/MABLStatus";
 import ESimSettings from "./components/ESimSettings";
+import { LogViewer } from "./components/LogViewer";
 
 function App() {
   const {
@@ -38,6 +39,7 @@ function App() {
       {connected && (
         <>
           <SystemStatus />
+          <LogViewer />
 
           <div className="settings-grid">
             <SystemSettings />

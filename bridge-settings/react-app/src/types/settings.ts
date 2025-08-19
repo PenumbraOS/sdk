@@ -45,7 +45,14 @@ export type StatusMessage =
       appId: string;
       actions: Record<string, ActionDefinition>;
     }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | {
+      type: "logEntry";
+      level: string;
+      tag: string;
+      message: string;
+      timestamp: number;
+    };
 
 export interface Setting {
   key: string;

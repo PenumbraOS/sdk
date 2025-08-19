@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 
@@ -29,12 +30,14 @@ data class ActionResult(
     val logs: List<LogEntry>? = null
 )
 
+@Serializable
 data class LogEntry(
     val timestamp: Long = System.currentTimeMillis(),
     val level: LogLevel,
     val message: String
 )
 
+@Serializable
 enum class LogLevel {
     INFO, WARNING, ERROR, DEBUG
 }
@@ -130,6 +133,8 @@ class SettingsRegistry(
 
     fun setWebServer(webServer: SettingsWebServer) {
         this.webServer = webServer
+        val systemActionProvider = SystemActionProvider(webServer.getLogStreamProvider())
+        registerActionProvider("system", systemActionProvider)
         // Force an initial emission so WebServer gets current settings immediately
         updateSettingsFlow()
     }

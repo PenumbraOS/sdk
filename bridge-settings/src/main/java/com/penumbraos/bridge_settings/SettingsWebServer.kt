@@ -43,8 +43,11 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.time.Duration.Companion.seconds
 
 private const val TAG = "SettingsWebServer"
@@ -116,6 +119,15 @@ sealed class StatusMessage {
     @Serializable
     @SerialName("error")
     data class Error(val message: String) : StatusMessage()
+
+    @Serializable
+    @SerialName("logEntry")
+    data class LogEntry(
+        val level: String,
+        val tag: String,
+        val message: String,
+        val timestamp: Long
+    ) : StatusMessage()
 }
 
 class SettingsWebServer(
@@ -126,6 +138,9 @@ class SettingsWebServer(
         null
     private val webSocketSessions = ConcurrentHashMap<String, DefaultWebSocketSession>()
     private val serverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val logStreamProvider = LogStreamProvider()
+
+    fun getLogStreamProvider(): LogStreamProvider = logStreamProvider
 
     suspend fun start() {
         Log.i(TAG, "Starting settings web server on port $port")
@@ -140,6 +155,19 @@ class SettingsWebServer(
         serverScope.launch {
             settingsRegistry.settingsFlow.collect { allSettings ->
                 broadcastSettingsUpdate(allSettings)
+            }
+        }
+
+        // Monitor log stream and broadcast log entries to all clients
+        serverScope.launch {
+            logStreamProvider.logFlow.collect { logEntry ->
+                val message = StatusMessage.LogEntry(
+                    level = logEntry.level,
+                    tag = logEntry.tag,
+                    message = logEntry.message,
+                    timestamp = logEntry.timestamp
+                )
+                broadcast(message)
             }
         }
 
@@ -170,6 +198,7 @@ class SettingsWebServer(
     fun stop() {
         Log.i(TAG, "Stopping settings web server")
         try {
+            logStreamProvider.destroy()
             server?.stop(1000, 2000)
             serverScope.cancel()
             webSocketSessions.clear()
@@ -273,6 +302,45 @@ class SettingsWebServer(
                 } catch (e: Exception) {
                     Log.e(TAG, "Error updating app setting", e)
                     call.respond(mapOf("error" to e.message))
+                }
+            }
+
+            get("/api/logs/download") {
+                try {
+                    Log.i(TAG, "Generating logs zip for download")
+
+                    val timestamp = System.currentTimeMillis()
+
+                    val outputStream = ByteArrayOutputStream()
+                    ZipOutputStream(outputStream).use { zipOut ->
+                        try {
+                            val process = ProcessBuilder("logcat", "-d", "*:V").start()
+                            zipOut.putNextEntry(ZipEntry("logcat_$timestamp.txt"))
+                            process.inputStream.copyTo(zipOut)
+                            zipOut.closeEntry()
+                            process.waitFor()
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Could not export logcat logs", e)
+                        }
+                    }
+
+                    val zipBytes = outputStream.toByteArray()
+                    val filename = "PenumbraOS_Logs_$timestamp.zip"
+
+                    call.response.headers.append("Content-Type", "application/zip")
+                    call.response.headers.append(
+                        "Content-Disposition",
+                        "attachment; filename=\"$filename\""
+                    )
+                    call.respondBytes(zipBytes)
+
+                    Log.i(TAG, "Logs zip generated and sent: $filename (${zipBytes.size} bytes)")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error generating logs zip", e)
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Failed to generate logs zip")
+                    )
                 }
             }
 
