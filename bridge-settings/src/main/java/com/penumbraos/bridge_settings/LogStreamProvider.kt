@@ -48,9 +48,10 @@ class LogStreamProvider {
         
         streamJob = scope.launch {
             try {
-                // Use logcat to stream Android logs
+                // Use logcat to stream Android logs starting from now
+                val startTime = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
                 val process = ProcessBuilder()
-                    .command("logcat", "-v", "time", "*:V")
+                    .command("logcat", "-T", startTime, "-v", "time", "*:V")
                     .redirectErrorStream(true)
                     .start()
                     
