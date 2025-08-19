@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ToggleSwitchProps {
   enabled: boolean;
@@ -6,7 +6,11 @@ interface ToggleSwitchProps {
   disabled?: boolean;
 }
 
-const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, onChange, disabled = false }) => {
+export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+  enabled,
+  onChange,
+  disabled = false,
+}) => {
   const handleClick = () => {
     if (!disabled) {
       onChange(!enabled);
@@ -14,15 +18,15 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({ enabled, onChange, disabled
   };
 
   return (
-    <div 
-      className={`toggle-switch ${enabled ? 'active' : ''} ${disabled ? 'disabled' : ''}`}
+    <div
+      className={`toggle-switch ${enabled ? "active" : ""} ${
+        disabled ? "disabled" : ""
+      }`}
       onClick={handleClick}
-      style={{ 
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.5 : 1
+      style={{
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.5 : 1,
       }}
     />
   );
 };
-
-export default ToggleSwitch;

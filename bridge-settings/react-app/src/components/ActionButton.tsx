@@ -6,7 +6,7 @@ import {
   LogEntry,
   ExecutionStatus,
 } from "../types/settings";
-import TextInput from "./TextInput";
+import { TextInput } from "./TextInput";
 
 interface ActionButtonProps {
   appId: string;
@@ -20,7 +20,7 @@ interface ActionButtonProps {
   executionStatus?: ExecutionStatus | null;
 }
 
-const ActionButton: React.FC<ActionButtonProps> = ({
+export const ActionButton: React.FC<ActionButtonProps> = ({
   appId,
   action,
   onExecute,
@@ -225,5 +225,3 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     </div>
   );
 };
-
-export default ActionButton;

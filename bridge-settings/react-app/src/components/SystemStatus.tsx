@@ -1,13 +1,13 @@
-import React from 'react';
-import { useSettings } from '../hooks/useSettings';
+import React from "react";
+import { useSettings } from "../hooks/useSettings";
 
-const SystemStatus: React.FC = () => {
+export const SystemStatus: React.FC = () => {
   const { systemStatus } = useSettings();
 
   return (
     <div className="system-status">
       <h3>System Status</h3>
-      
+
       <div className="status-grid">
         {systemStatus.battery && (
           <div>
@@ -17,11 +17,15 @@ const SystemStatus: React.FC = () => {
             </div>
             <div className="status-item">
               <span className="label">Charging:</span>
-              <span className="value">{systemStatus.battery.charging ? 'Yes' : 'No'}</span>
+              <span className="value">
+                {systemStatus.battery.charging ? "Yes" : "No"}
+              </span>
             </div>
             <div className="status-item">
               <span className="label">Power Save:</span>
-              <span className="value">{systemStatus.battery.powerSaveMode ? 'On' : 'Off'}</span>
+              <span className="value">
+                {systemStatus.battery.powerSaveMode ? "On" : "Off"}
+              </span>
             </div>
           </div>
         )}
@@ -34,7 +38,9 @@ const SystemStatus: React.FC = () => {
             </div>
             <div className="status-item">
               <span className="label">Auto Brightness:</span>
-              <span className="value">{systemStatus.display.autoBrightness ? 'On' : 'Off'}</span>
+              <span className="value">
+                {systemStatus.display.autoBrightness ? "On" : "Off"}
+              </span>
             </div>
           </div>
         )}
@@ -47,7 +53,9 @@ const SystemStatus: React.FC = () => {
             </div>
             <div className="status-item">
               <span className="label">Muted:</span>
-              <span className="value">{systemStatus.audio.muted ? 'Yes' : 'No'}</span>
+              <span className="value">
+                {systemStatus.audio.muted ? "Yes" : "No"}
+              </span>
             </div>
           </div>
         )}
@@ -56,7 +64,9 @@ const SystemStatus: React.FC = () => {
           <div>
             <div className="status-item">
               <span className="label">WiFi:</span>
-              <span className="value">{systemStatus.network.wifiEnabled ? 'Enabled' : 'Disabled'}</span>
+              <span className="value">
+                {systemStatus.network.wifiEnabled ? "Enabled" : "Disabled"}
+              </span>
             </div>
           </div>
         )}
@@ -64,5 +74,3 @@ const SystemStatus: React.FC = () => {
     </div>
   );
 };
-
-export default SystemStatus;

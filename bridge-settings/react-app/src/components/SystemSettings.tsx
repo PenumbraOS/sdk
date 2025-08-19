@@ -1,9 +1,9 @@
-import React from 'react';
-import { useSettings } from '../hooks/useSettings';
-import ToggleSwitch from './ToggleSwitch';
-import Slider from './Slider';
+import React from "react";
+import { useSettings } from "../hooks/useSettings";
+import { ToggleSwitch } from "./ToggleSwitch";
+import { Slider } from "./Slider";
 
-const SystemSettings: React.FC = () => {
+export const SystemSettings: React.FC = () => {
   const { getSystemSettings, updateSystemSetting } = useSettings();
   const systemSettings = getSystemSettings();
 
@@ -18,13 +18,15 @@ const SystemSettings: React.FC = () => {
   return (
     <div className="settings-section">
       <h2>System Settings</h2>
-      
+
       <div className="setting-item">
         <span className="setting-label">Display Enabled</span>
         <div className="setting-control">
           <ToggleSwitch
-            enabled={Boolean(systemSettings['display.humane_enabled'])}
-            onChange={(enabled) => handleToggle('display.humane_enabled', enabled)}
+            enabled={Boolean(systemSettings["display.humane_enabled"])}
+            onChange={(enabled) =>
+              handleToggle("display.humane_enabled", enabled)
+            }
           />
         </div>
       </div>
@@ -33,13 +35,13 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Audio Volume</span>
         <div className="setting-control">
           <Slider
-            value={Number(systemSettings['audio.volume']) || 70}
+            value={Number(systemSettings["audio.volume"]) || 70}
             min={0}
             max={100}
-            onChange={(value) => handleSlider('audio.volume', value)}
+            onChange={(value) => handleSlider("audio.volume", value)}
           />
           <span className="status-display">
-            {Number(systemSettings['audio.volume']) || 70}%
+            {Number(systemSettings["audio.volume"]) || 70}%
           </span>
         </div>
       </div>
@@ -48,8 +50,8 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Muted</span>
         <div className="setting-control">
           <ToggleSwitch
-            enabled={Boolean(systemSettings['audio.muted'])}
-            onChange={(enabled) => handleToggle('audio.muted', enabled)}
+            enabled={Boolean(systemSettings["audio.muted"])}
+            onChange={(enabled) => handleToggle("audio.muted", enabled)}
           />
         </div>
       </div>
@@ -58,12 +60,10 @@ const SystemSettings: React.FC = () => {
         <span className="setting-label">Device Temperature</span>
         <div className="setting-control">
           <span className="status-display">
-            {Number(systemSettings['device.temperature'])?.toFixed(1) || '--'}°C
+            {Number(systemSettings["device.temperature"])?.toFixed(1) || "--"}°C
           </span>
         </div>
       </div>
     </div>
   );
 };
-
-export default SystemSettings;

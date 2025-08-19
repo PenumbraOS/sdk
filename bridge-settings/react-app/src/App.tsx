@@ -1,13 +1,13 @@
 import { useSettings } from "./hooks/useSettings";
-import ConnectionStatus from "./components/ConnectionStatus";
-import SystemStatus from "./components/SystemStatus";
-import SystemSettings from "./components/SystemSettings";
+import { ConnectionStatus } from "./components/ConnectionStatus";
+import { SystemStatus } from "./components/SystemStatus";
+import { SystemSettings } from "./components/SystemSettings";
 import { AppSettings } from "./components/AppSettings";
-import MABLStatus from "./components/MABLStatus";
-import ESimSettings from "./components/ESimSettings";
+import { MABLStatus } from "./components/MABLStatus";
+import { ESimSettings } from "./components/ESimSettings";
 import { LogViewer } from "./components/LogViewer";
 
-function App() {
+export const App = () => {
   const {
     loading,
     error,
@@ -65,6 +65,4 @@ function App() {
       )}
     </div>
   );
-}
-
-export default App;
+};

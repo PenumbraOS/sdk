@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
-import ActionButton from "./ActionButton";
-import { ActionDefinition, ActionResult, ExecutionStatus } from "../types/settings";
+import { ActionButton } from "./ActionButton";
+import {
+  ActionDefinition,
+  ActionResult,
+  ExecutionStatus,
+} from "../types/settings";
 
 interface ESimSettingsProps {
   onExecuteAction: (
@@ -12,7 +16,7 @@ interface ESimSettingsProps {
   executionStatus?: ExecutionStatus | null;
 }
 
-const ESimSettings: React.FC<ESimSettingsProps> = ({
+export const ESimSettings: React.FC<ESimSettingsProps> = ({
   onExecuteAction,
   actionResults,
   executionStatus,
@@ -219,5 +223,3 @@ const ESimSettings: React.FC<ESimSettingsProps> = ({
     </div>
   );
 };
-
-export default ESimSettings;

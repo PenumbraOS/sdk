@@ -1,8 +1,8 @@
 import React from "react";
 import { useSettings } from "../hooks/useSettings";
-import ToggleSwitch from "./ToggleSwitch";
-import Slider from "./Slider";
-import TextInput from "./TextInput";
+import { ToggleSwitch } from "./ToggleSwitch";
+import { Slider } from "./Slider";
+import { TextInput } from "./TextInput";
 
 export const AppSettings: React.FC = () => {
   const { allSettings } = useSettings();

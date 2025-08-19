@@ -8,7 +8,7 @@ interface TextInputProps {
   style?: React.CSSProperties;
 }
 
-const TextInput: React.FC<TextInputProps> = ({
+export const TextInput: React.FC<TextInputProps> = ({
   value,
   onChange,
   placeholder = "",
@@ -43,5 +43,3 @@ const TextInput: React.FC<TextInputProps> = ({
     />
   );
 };
-
-export default TextInput;
