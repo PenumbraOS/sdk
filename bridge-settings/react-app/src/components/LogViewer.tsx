@@ -33,6 +33,12 @@ export const LogViewer = () => {
       label: "Info +",
       filter: (log: LogEntry) => ["I", "D", "W", "E"].includes(log.level),
     },
+    {
+      id: "penumbra",
+      label: "PenumbraOS",
+      filter: (log: LogEntry) =>
+        /pinitd|penumbra|SystemBridgeService|BridgeCoreService/.test(log.tag),
+    },
   ];
 
   useEffect(() => {
