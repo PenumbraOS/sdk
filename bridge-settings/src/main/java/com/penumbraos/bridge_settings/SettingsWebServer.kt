@@ -353,12 +353,21 @@ class SettingsWebServer(
                 val inputStream = getResourceFromApk(resourcePath)
                 if (inputStream != null) {
                     val contentType = getContentType(resourcePath)
+                    
+                    call.response.headers.append("Cache-Control", "no-cache, no-store, must-revalidate")
+                    call.response.headers.append("Pragma", "no-cache")
+                    call.response.headers.append("Expires", "0")
+
                     call.respondBytes(inputStream.readBytes(), contentType)
                     inputStream.close()
                 } else {
                     // File not found, try to serve index.html for SPA routing
                     val indexStream = getResourceFromApk("react-build/index.html")
                     if (indexStream != null) {
+                        call.response.headers.append("Cache-Control", "no-cache, no-store, must-revalidate")
+                        call.response.headers.append("Pragma", "no-cache")
+                        call.response.headers.append("Expires", "0")
+
                         call.respondBytes(indexStream.readBytes(), ContentType.Text.Html)
                         indexStream.close()
                     } else {
@@ -374,6 +383,10 @@ class SettingsWebServer(
             get("/") {
                 val indexStream = getResourceFromApk("react-build/index.html")
                 if (indexStream != null) {
+                    call.response.headers.append("Cache-Control", "no-cache, no-store, must-revalidate")
+                    call.response.headers.append("Pragma", "no-cache")
+                    call.response.headers.append("Expires", "0")
+
                     call.respondBytes(indexStream.readBytes(), ContentType.Text.Html)
                     indexStream.close()
                 } else {
