@@ -30,6 +30,19 @@ data class ActionResult(
     val logs: List<LogEntry>? = null
 )
 
+data class SettingChange(
+    val appId: String,
+    val category: String,
+    val key: String,
+    val value: Any?,
+    val previousValue: Any?
+)
+
+data class SettingsUpdate(
+    val allSettings: Map<String, Map<String, Any?>>,
+    val changes: List<SettingChange>
+)
+
 @Serializable
 data class LogEntry(
     val timestamp: Long = System.currentTimeMillis(),
@@ -112,8 +125,8 @@ class SettingsRegistry(
     // Reference to web server for broadcasting (set by SettingsService)
     private var webServer: SettingsWebServer? = null
 
-    private val _settingsFlow = MutableStateFlow<Map<String, Map<String, Any?>>>(emptyMap())
-    val settingsFlow: StateFlow<Map<String, Map<String, Any?>>> = _settingsFlow.asStateFlow()
+    private val _settingsFlow = MutableStateFlow<SettingsUpdate>(SettingsUpdate(emptyMap(), emptyList()))
+    val settingsFlow: StateFlow<SettingsUpdate> = _settingsFlow.asStateFlow()
 
     private val json = Json {
         prettyPrint = true
@@ -315,12 +328,14 @@ class SettingsRegistry(
             return false
         }
 
+        val previousValue = settingsCategory.values[key]
         settingsCategory.values[key] = value
 
         // Save this specific app setting immediately
         saveAppSetting(appId, category, key, value)
 
-        updateSettingsFlow()
+        val change = SettingChange(appId, category, key, value, previousValue)
+        updateSettingsFlow(listOf(change))
         Log.i(TAG, "Updated app setting: $appId.$category.$key = $value")
         return true
     }
@@ -337,6 +352,8 @@ class SettingsRegistry(
 
     suspend fun updateSystemSetting(key: String, value: Any): Boolean {
         if (validateSystemSetting(key, value)) {
+            val previousValue = systemSettings[key]
+            
             // Apply the setting to Android system if it's a system setting
             val success = if (isAndroidSystemSetting(key)) {
                 applyAndroidSystemSetting(key, value)
@@ -350,7 +367,8 @@ class SettingsRegistry(
                     saveSystemSetting(key, value)
                 }
 
-                updateSettingsFlow()
+                val change = SettingChange("system", "", key, value, previousValue)
+                updateSettingsFlow(listOf(change))
                 Log.i(TAG, "Updated system setting: $key = $value")
                 return true
             }
@@ -592,13 +610,16 @@ class SettingsRegistry(
     private fun setupTemperatureMonitoring() {
         registryScope.launch {
             temperatureController.temperatureFlow.collect { temperature ->
+                val previousValue = systemSettings["device.temperature"]
                 systemSettings["device.temperature"] = temperature
-                updateSettingsFlow()
+                val change = SettingChange("system", "", "device.temperature", temperature, previousValue)
+                updateSettingsFlow(listOf(change))
             }
         }
     }
 
-    private fun updateSettingsFlow() {
-        _settingsFlow.value = getAllSettings()
+    private fun updateSettingsFlow(changes: List<SettingChange> = emptyList()) {
+        val allSettings = getAllSettings()
+        _settingsFlow.value = SettingsUpdate(allSettings, changes)
     }
 }

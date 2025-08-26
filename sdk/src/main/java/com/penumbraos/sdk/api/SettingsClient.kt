@@ -9,8 +9,25 @@ import kotlin.coroutines.resumeWithException
 
 private const val TAG = "SettingsClient"
 
+interface BooleanSettingListener {
+    fun onSettingChanged(value: Boolean)
+}
+
+interface StringSettingListener {
+    fun onSettingChanged(value: String)
+}
+
+interface IntSettingListener {
+    fun onSettingChanged(value: Int)
+}
+
+interface FloatSettingListener {
+    fun onSettingChanged(value: Float)
+}
+
 @Suppress("UNCHECKED_CAST")
 class SettingsClient(private val settingsProvider: ISettingsProvider) {
+    private val listenerCallbacks = mutableMapOf<String, ISettingsCallback>()
 
     suspend fun registerSettings(
         appId: String,
@@ -138,6 +155,88 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to execute action: $appId.$action", e)
             false
+        }
+    }
+
+    fun addBooleanListener(appId: String, category: String, key: String, listener: BooleanSettingListener) {
+        val settingKey = "$appId.$category.$key"
+        val callback = createTypedCallback(settingKey, "boolean") { value ->
+            try {
+                listener.onSettingChanged(value.toBoolean())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to notify boolean listener for $settingKey", e)
+            }
+        }
+        
+        listenerCallbacks[settingKey] = callback
+        settingsProvider.registerSettingListener(appId, category, key, "boolean", callback)
+    }
+
+    fun addStringListener(appId: String, category: String, key: String, listener: StringSettingListener) {
+        val settingKey = "$appId.$category.$key"
+        val callback = createTypedCallback(settingKey, "string") { value ->
+            try {
+                listener.onSettingChanged(value)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to notify string listener for $settingKey", e)
+            }
+        }
+        
+        listenerCallbacks[settingKey] = callback
+        settingsProvider.registerSettingListener(appId, category, key, "string", callback)
+    }
+
+    fun addIntListener(appId: String, category: String, key: String, listener: IntSettingListener) {
+        val settingKey = "$appId.$category.$key"
+        val callback = createTypedCallback(settingKey, "int") { value ->
+            try {
+                listener.onSettingChanged(value.toInt())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to notify int listener for $settingKey", e)
+            }
+        }
+        
+        listenerCallbacks[settingKey] = callback
+        settingsProvider.registerSettingListener(appId, category, key, "int", callback)
+    }
+
+    fun addFloatListener(appId: String, category: String, key: String, listener: FloatSettingListener) {
+        val settingKey = "$appId.$category.$key"
+        val callback = createTypedCallback(settingKey, "float") { value ->
+            try {
+                listener.onSettingChanged(value.toFloat())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to notify float listener for $settingKey", e)
+            }
+        }
+        
+        listenerCallbacks[settingKey] = callback
+        settingsProvider.registerSettingListener(appId, category, key, "float", callback)
+    }
+
+    fun removeListener(appId: String, category: String, key: String, listener: Any) {
+        val settingKey = "$appId.$category.$key"
+        val callback = listenerCallbacks.remove(settingKey)
+        if (callback != null) {
+            settingsProvider.unregisterSettingListener(appId, category, key, callback)
+        }
+    }
+
+    private fun createTypedCallback(settingKey: String, type: String, onChanged: (String) -> Unit): ISettingsCallback {
+        return object : ISettingsCallback.Stub() {
+            override fun onSettingChanged(appId: String, category: String, key: String, value: String) {
+                onChanged(value)
+            }
+            
+            override fun onSettingsRegistered(appId: String, category: String) {
+            }
+            
+            override fun onError(message: String) {
+                Log.e(TAG, "Listener callback error for $settingKey ($type): $message")
+            }
+            
+            override fun onActionResult(appId: String, action: String, success: Boolean, message: String, data: Map<*, *>) {
+            }
         }
     }
 }

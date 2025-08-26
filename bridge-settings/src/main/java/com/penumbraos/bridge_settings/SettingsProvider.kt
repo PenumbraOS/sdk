@@ -14,14 +14,24 @@ import java.util.concurrent.ConcurrentHashMap
 private const val TAG = "SettingsProvider"
 
 class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettingsProvider.Stub() {
+    // Settings registrations with callbacks
+    // TODO: Remove?
     private val callbacks = ConcurrentHashMap<String, ISettingsCallback>()
+
+    // Dynamic setting change listeners
+    private val settingListeners = ConcurrentHashMap<String, MutableSet<SettingListener>>()
     private val providerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private data class SettingListener(
+        val callback: ISettingsCallback,
+        val type: String
+    )
 
     init {
         // Monitor settings changes and notify callbacks
         providerScope.launch {
-            settingsRegistry.settingsFlow.collect { allSettings ->
-                notifySettingsChanged(allSettings)
+            settingsRegistry.settingsFlow.collect { settingsUpdate ->
+                notifySettingsChanged(settingsUpdate.changes)
             }
         }
     }
@@ -238,14 +248,79 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
         }
     }
 
-    private fun notifySettingsChanged(allSettings: Map<String, Any>) {
-        // This would be implemented to notify specific callbacks about relevant changes
-        // For now, we'll skip detailed change detection
+    private fun notifySettingsChanged(changes: List<SettingChange>) {
+        try {
+            changes.forEach { change ->
+                // Notify category-specific callbacks
+                if (change.appId != "system") {
+                    val callback = callbacks["${change.appId}.${change.category}"]
+                    if (callback != null) {
+                        safeCallback(TAG) {
+                            Log.d(
+                                TAG,
+                                "Notifying category callback for: ${change.appId}.${change.category}.${change.key} = ${change.value}"
+                            )
+                            callback.onSettingChanged(
+                                change.appId,
+                                change.category,
+                                change.key,
+                                change.value!!.toString()
+                            )
+                        }
+                    }
+                }
+
+                // Notify registered setting listeners
+                val settingKey = "${change.appId}.${change.category}.${change.key}"
+                settingListeners[settingKey]?.forEach { listener ->
+                    safeCallback(TAG) {
+                        Log.d(
+                            TAG,
+                            "Notifying ${listener.type} listener for: $settingKey = ${change.value}"
+                        )
+
+                        listener.callback.onSettingChanged(
+                            change.appId,
+                            change.category,
+                            change.key,
+                            change.value!!.toString()
+                        )
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error notifying settings changes", e)
+        }
+    }
+
+    private fun convertValueForListener(value: String, type: String): String {
+        return try {
+            when (type.lowercase()) {
+                "boolean" -> {
+                    value.toBoolean().toString()
+                }
+
+                "int", "integer" -> {
+                    value.toInt().toString()
+                }
+
+                "float" -> {
+                    value.toFloat().toString()
+                }
+
+                "string" -> value
+                else -> value
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to convert value '$value' to type '$type', using original", e)
+            value
+        }
     }
 
     fun cleanup() {
         providerScope.cancel()
         callbacks.clear()
+        settingListeners.clear()
     }
 
     // Discovery methods for dynamic registration
@@ -349,6 +424,43 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
             "display.humane_enabled" -> "Humane display enabled state"
             "device.temperature" -> "Current device temperature (read-only)"
             else -> "System setting: $key"
+        }
+    }
+
+    override fun registerSettingListener(
+        appId: String,
+        category: String,
+        key: String,
+        type: String,
+        callback: ISettingsCallback
+    ) {
+        try {
+            val settingKey = "$appId.$category.$key"
+            val listener = SettingListener(callback, type)
+
+            settingListeners.getOrPut(settingKey) { mutableSetOf() }.add(listener)
+            Log.i(TAG, "Registered $type listener for setting: $settingKey")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register listener for $appId.$category.$key", e)
+        }
+    }
+
+    override fun unregisterSettingListener(
+        appId: String,
+        category: String,
+        key: String,
+        callback: ISettingsCallback
+    ) {
+        try {
+            val settingKey = "$appId.$category.$key"
+            settingListeners[settingKey]?.removeIf { it.callback == callback }
+
+            if (settingListeners[settingKey]?.isEmpty() == true) {
+                settingListeners.remove(settingKey)
+            }
+            Log.i(TAG, "Unregistered listener for setting: $settingKey")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unregister listener for $appId.$category.$key", e)
         }
     }
 }

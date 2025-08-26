@@ -153,8 +153,8 @@ class SettingsWebServer(
 
         // Monitor settings changes and broadcast to all clients
         serverScope.launch {
-            settingsRegistry.settingsFlow.collect { allSettings ->
-                broadcastSettingsUpdate(allSettings)
+            settingsRegistry.settingsFlow.collect { settingsUpdate ->
+                broadcastSettingsUpdate(settingsUpdate.allSettings)
             }
         }
 

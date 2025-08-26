@@ -18,6 +18,9 @@ interface ISettingsProvider {
     void sendAppStatusUpdate(String appId, String component, in Map payload);
     void sendAppEvent(String appId, String eventType, in Map payload);
     
+    void registerSettingListener(String appId, String category, String key, String type, ISettingsCallback callback);
+    void unregisterSettingListener(String appId, String category, String key, ISettingsCallback callback);
+    
     // Discovery methods for dynamic registration
     List<SystemSettingInfo> getAvailableSystemSettings();
     List<String> getRegisteredApps();
