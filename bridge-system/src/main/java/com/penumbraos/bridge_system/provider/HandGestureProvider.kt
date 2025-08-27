@@ -119,8 +119,9 @@ class HandGestureProvider(private val looper: Looper) : IHandGestureProvider.Stu
 
         Log.w(TAG, "Registering touchpad listener")
 
+        // We register an input channel for the touchpad, but we'll get events from the hand tracker as well
+        // We will filter the events down based on source in the listener
         val inputChannel = registerTouchpadInputChannel(TAG)
-
         if (inputChannel != null) {
             listener = EventListener(inputChannel)
         }
