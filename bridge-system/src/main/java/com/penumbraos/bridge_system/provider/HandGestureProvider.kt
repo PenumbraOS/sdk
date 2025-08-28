@@ -16,6 +16,7 @@ private const val TAG = "HandGestureProvider"
 private const val VELOCITY_THRESHOLD = 0.5f
 private const val VELOCITY_MIN_MOVING = 0.3f
 private const val GESTURE_COOLDOWN_MS = 500L
+private const val MAX_SAMPLE_DELTA = 1000L
 
 class HandGestureProvider(private val looper: Looper) : IHandGestureProvider.Stub() {
     private val callbacks = mutableListOf<IHandGestureCallback>()
@@ -24,13 +25,14 @@ class HandGestureProvider(private val looper: Looper) : IHandGestureProvider.Stu
     inner class PushListener {
 
         private var gestureActive = false
+        private var gestureEndTime = 0L
 
         private var lastDepth = Float.NaN
         private var lastTimestamp = 0L
-        private var gestureEndTime = 0L
 
         fun processMotionEvent(event: MotionEvent) {
             val depth = event.getAxisValue(MotionEvent.AXIS_PRESSURE)
+            // HATS sends events every ~100ms
             val timestamp = event.eventTime
 
             if (lastDepth.isNaN()) {
@@ -40,7 +42,7 @@ class HandGestureProvider(private val looper: Looper) : IHandGestureProvider.Stu
             }
 
             val timeDelta = timestamp - lastTimestamp
-            if (timeDelta > 0) {
+            if (timeDelta > 0 && timeDelta < MAX_SAMPLE_DELTA) {
                 val depthDelta = depth - lastDepth
                 val velocity = kotlin.math.abs(depthDelta * 1000.0f / timeDelta)
 
