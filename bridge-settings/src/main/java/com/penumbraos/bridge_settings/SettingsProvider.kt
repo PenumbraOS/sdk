@@ -1,5 +1,6 @@
 package com.penumbraos.bridge_settings
 
+import android.os.IBinder
 import android.util.Log
 import com.penumbraos.bridge.ISettingsProvider
 import com.penumbraos.bridge.callback.IHttpEndpointCallback
@@ -343,6 +344,12 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
                 Log.e(TAG, "Cannot register HTTP endpoint - web server not initialized")
                 false
             } else {
+                callback.asBinder().linkToDeath(object : IBinder.DeathRecipient {
+                    override fun binderDied() {
+                        server.unregisterEndpoint(providerId, path, method)
+                    }
+                }, 0)
+
                 val success = server.registerEndpoint(
                     providerId,
                     path,

@@ -182,6 +182,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                     override fun onHttpRequest(
                         path: String,
                         method: String,
+                        pathParams: MutableMap<Any?, Any?>,
                         headers: MutableMap<Any?, Any?>?,
                         queryParams: MutableMap<Any?, Any?>?,
                         body: String?,
@@ -193,7 +194,15 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                             val queryMap = queryParams?.mapKeys { it.key.toString() }
                                 ?.mapValues { it.value.toString() } ?: emptyMap()
 
-                            val request = HttpRequest(path, method, headerMap, queryMap, body)
+                            val request =
+                                HttpRequest(
+                                    path,
+                                    method,
+                                    pathParams as Map<String, String>,
+                                    headerMap,
+                                    queryMap,
+                                    body
+                                )
 
                             scope.launch {
                                 try {

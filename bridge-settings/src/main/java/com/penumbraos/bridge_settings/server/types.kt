@@ -11,6 +11,7 @@ data class EndpointRequest(
     val method: String,
     val headers: Map<String, String>,
     val queryParams: Map<String, String>,
+    val pathParams: Map<String, String>,
     val body: String?
 )
 
@@ -35,7 +36,11 @@ data class RegisteredEndpoint(
     val method: String,
     val callback: EndpointCallback,
     val providerId: String
-)
+) {
+    fun matchesPath(requestPath: String): Map<String, String>? {
+        return PathParser.matchPath(this.path, requestPath)
+    }
+}
 
 class AidlEndpointCallback(
     private val aidlCallback: IHttpEndpointCallback
@@ -64,6 +69,7 @@ class AidlEndpointCallback(
                 aidlCallback.onHttpRequest(
                     request.path,
                     request.method,
+                    request.pathParams,
                     request.headers,
                     request.queryParams,
                     request.body,

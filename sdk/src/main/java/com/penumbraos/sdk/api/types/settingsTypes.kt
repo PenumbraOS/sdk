@@ -3,6 +3,7 @@ package com.penumbraos.sdk.api.types
 data class HttpRequest(
     val path: String,
     val method: String,
+    val pathParams: Map<String, String>,
     val headers: Map<String, String>,
     val queryParams: Map<String, String>,
     val body: String?

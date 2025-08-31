@@ -280,13 +280,24 @@ class SettingsWebServer(
         }
 
         intercept(ApplicationCallPipeline.Call) {
-            val fullPath =
-                call.request.uri.substringBefore('?') // Remove query params from path
+            val fullPath = call.request.uri.substringBefore('?')
             val method = call.request.httpMethod.value
-            val endpointKey = "${method}:$fullPath"
+            
+            var matchedEndpoint: RegisteredEndpoint? = null
+            var pathParams: Map<String, String>? = null
+            
+            for (endpoint in registeredEndpoints.values) {
+                if (endpoint.method.equals(method, ignoreCase = true)) {
+                    val match = endpoint.matchesPath(fullPath)
+                    if (match != null) {
+                        matchedEndpoint = endpoint
+                        pathParams = match
+                        break
+                    }
+                }
+            }
 
-            val endpoint = registeredEndpoints[endpointKey]
-            if (endpoint != null) {
+            if (matchedEndpoint != null && pathParams != null) {
                 try {
                     val headers = call.request.headers.toMap()
                         .mapValues { it.value.firstOrNull() ?: "" }
@@ -303,10 +314,11 @@ class SettingsWebServer(
                         method = method,
                         headers = headers,
                         queryParams = queryParams,
+                        pathParams = pathParams,
                         body = body
                     )
 
-                    val response = endpoint.callback.handle(request)
+                    val response = matchedEndpoint.callback.handle(request)
 
                     response.headers.forEach { (key, value) ->
                         call.response.headers.append(key, value)
@@ -320,7 +332,7 @@ class SettingsWebServer(
                     )
                     return@intercept finish()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error handling dynamic endpoint $endpointKey", e)
+                    Log.e(TAG, "Error handling dynamic endpoint ${matchedEndpoint.path}", e)
                     call.respond(
                         HttpStatusCode.InternalServerError,
                         mapOf("error" to "Internal server error")
@@ -335,7 +347,7 @@ class SettingsWebServer(
             webSocket("/ws/settings") {
                 handleWebSocketConnection(this)
             }
-            
+
             // REST API endpoints
             get("/api/settings") {
                 try {
