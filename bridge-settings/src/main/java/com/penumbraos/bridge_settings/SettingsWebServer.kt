@@ -4,17 +4,25 @@ package com.penumbraos.bridge_settings
 
 import android.util.Log
 import com.penumbraos.bridge_settings.json.toJsonElement
+import com.penumbraos.bridge_settings.server.EndpointCallback
+import com.penumbraos.bridge_settings.server.EndpointRequest
+import com.penumbraos.bridge_settings.server.RegisteredEndpoint
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.call
 import io.ktor.server.application.install
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.request.httpMethod
 import io.ktor.server.request.receive
+import io.ktor.server.request.receiveText
+import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
@@ -25,6 +33,7 @@ import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
+import io.ktor.util.toMap
 import io.ktor.websocket.DefaultWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
@@ -139,8 +148,54 @@ class SettingsWebServer(
     private val webSocketSessions = ConcurrentHashMap<String, DefaultWebSocketSession>()
     private val serverScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val logStreamProvider = LogStreamProvider()
+    private val registeredEndpoints = ConcurrentHashMap<String, RegisteredEndpoint>()
 
     fun getLogStreamProvider(): LogStreamProvider = logStreamProvider
+
+    fun registerEndpoint(
+        providerId: String,
+        path: String,
+        method: String,
+        callback: EndpointCallback
+    ): Boolean {
+        val normalizedPath = if (path.startsWith("/")) path else "/$path"
+        val endpointKey = "${method.uppercase()}:$normalizedPath"
+
+        if (registeredEndpoints.containsKey(endpointKey)) {
+            Log.w(TAG, "Endpoint already registered: $endpointKey")
+            return false
+        }
+
+        val endpoint = RegisteredEndpoint(normalizedPath, method.uppercase(), callback, providerId)
+        registeredEndpoints[endpointKey] = endpoint
+        Log.i(TAG, "Registered endpoint: $endpointKey for provider: $providerId")
+        return true
+    }
+
+    fun unregisterEndpoint(providerId: String, path: String, method: String): Boolean {
+        val normalizedPath = if (path.startsWith("/")) path else "/$path"
+        val endpointKey = "${method.uppercase()}:$normalizedPath"
+
+        val endpoint = registeredEndpoints[endpointKey]
+        if (endpoint?.providerId == providerId) {
+            registeredEndpoints.remove(endpointKey)
+            Log.i(TAG, "Unregistered endpoint: $endpointKey for provider: $providerId")
+            return true
+        }
+
+        Log.w(TAG, "Cannot unregister endpoint $endpointKey - not found or wrong provider")
+        return false
+    }
+
+    fun unregisterAllEndpointsForProvider(providerId: String) {
+        val toRemove = registeredEndpoints.entries.filter { it.value.providerId == providerId }
+        toRemove.forEach { registeredEndpoints.remove(it.key) }
+        Log.i(TAG, "Unregistered ${toRemove.size} endpoints for provider: $providerId")
+    }
+
+    fun getRegisteredEndpoints(): List<RegisteredEndpoint> {
+        return registeredEndpoints.values.toList()
+    }
 
     suspend fun start() {
         Log.i(TAG, "Starting settings web server on port $port")
@@ -224,12 +279,63 @@ class SettingsWebServer(
             masking = false
         }
 
+        intercept(ApplicationCallPipeline.Call) {
+            val fullPath =
+                call.request.uri.substringBefore('?') // Remove query params from path
+            val method = call.request.httpMethod.value
+            val endpointKey = "${method}:$fullPath"
+
+            val endpoint = registeredEndpoints[endpointKey]
+            if (endpoint != null) {
+                try {
+                    val headers = call.request.headers.toMap()
+                        .mapValues { it.value.firstOrNull() ?: "" }
+                    val queryParams = call.request.queryParameters.toMap()
+                        .mapValues { it.value.firstOrNull() ?: "" }
+                    val body = try {
+                        call.receiveText()
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    val request = EndpointRequest(
+                        path = fullPath,
+                        method = method,
+                        headers = headers,
+                        queryParams = queryParams,
+                        body = body
+                    )
+
+                    val response = endpoint.callback.handle(request)
+
+                    response.headers.forEach { (key, value) ->
+                        call.response.headers.append(key, value)
+                    }
+
+                    val contentType = ContentType.parse(response.contentType)
+                    call.respondText(
+                        response.body,
+                        contentType,
+                        HttpStatusCode.fromValue(response.statusCode)
+                    )
+                    return@intercept finish()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error handling dynamic endpoint $endpointKey", e)
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        mapOf("error" to "Internal server error")
+                    )
+                    return@intercept finish()
+                }
+            }
+        }
+
         routing {
             // WebSocket endpoint for real-time communication
             webSocket("/ws/settings") {
                 handleWebSocketConnection(this)
             }
-
+            
             // REST API endpoints
             get("/api/settings") {
                 try {
@@ -273,7 +379,8 @@ class SettingsWebServer(
             get("/api/settings/app/{appId}") {
                 try {
                     val appId =
-                        call.parameters["appId"] ?: throw IllegalArgumentException("Missing appId")
+                        call.parameters["appId"]
+                            ?: throw IllegalArgumentException("Missing appId")
                     val appSettings = settingsRegistry.getAllAppSettings(appId)
                     call.respond(appSettings)
                 } catch (e: Exception) {
@@ -285,7 +392,8 @@ class SettingsWebServer(
             post("/api/settings/app/{appId}/{category}/{key}") {
                 try {
                     val appId =
-                        call.parameters["appId"] ?: throw IllegalArgumentException("Missing appId")
+                        call.parameters["appId"]
+                            ?: throw IllegalArgumentException("Missing appId")
                     val category = call.parameters["category"]
                         ?: throw IllegalArgumentException("Missing category")
                     val key =
@@ -334,7 +442,10 @@ class SettingsWebServer(
                     )
                     call.respondBytes(zipBytes)
 
-                    Log.i(TAG, "Logs zip generated and sent: $filename (${zipBytes.size} bytes)")
+                    Log.i(
+                        TAG,
+                        "Logs zip generated and sent: $filename (${zipBytes.size} bytes)"
+                    )
                 } catch (e: Exception) {
                     Log.e(TAG, "Error generating logs zip", e)
                     call.respond(
@@ -353,8 +464,11 @@ class SettingsWebServer(
                 val inputStream = getResourceFromApk(resourcePath)
                 if (inputStream != null) {
                     val contentType = getContentType(resourcePath)
-                    
-                    call.response.headers.append("Cache-Control", "no-cache, no-store, must-revalidate")
+
+                    call.response.headers.append(
+                        "Cache-Control",
+                        "no-cache, no-store, must-revalidate"
+                    )
                     call.response.headers.append("Pragma", "no-cache")
                     call.response.headers.append("Expires", "0")
 
@@ -364,7 +478,10 @@ class SettingsWebServer(
                     // File not found, try to serve index.html for SPA routing
                     val indexStream = getResourceFromApk("react-build/index.html")
                     if (indexStream != null) {
-                        call.response.headers.append("Cache-Control", "no-cache, no-store, must-revalidate")
+                        call.response.headers.append(
+                            "Cache-Control",
+                            "no-cache, no-store, must-revalidate"
+                        )
                         call.response.headers.append("Pragma", "no-cache")
                         call.response.headers.append("Expires", "0")
 
@@ -383,7 +500,10 @@ class SettingsWebServer(
             get("/") {
                 val indexStream = getResourceFromApk("react-build/index.html")
                 if (indexStream != null) {
-                    call.response.headers.append("Cache-Control", "no-cache, no-store, must-revalidate")
+                    call.response.headers.append(
+                        "Cache-Control",
+                        "no-cache, no-store, must-revalidate"
+                    )
                     call.response.headers.append("Pragma", "no-cache")
                     call.response.headers.append("Expires", "0")
 

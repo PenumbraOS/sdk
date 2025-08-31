@@ -2,8 +2,10 @@ package com.penumbraos.bridge_settings
 
 import android.util.Log
 import com.penumbraos.bridge.ISettingsProvider
+import com.penumbraos.bridge.callback.IHttpEndpointCallback
 import com.penumbraos.bridge.callback.ISettingsCallback
 import com.penumbraos.bridge_settings.providers.safeCallback
+import com.penumbraos.bridge_settings.server.AidlEndpointCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,6 +23,8 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
     // Dynamic setting change listeners
     private val settingListeners = ConcurrentHashMap<String, MutableSet<SettingListener>>()
     private val providerScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private var webServer: SettingsWebServer? = null
 
     private data class SettingListener(
         val callback: ISettingsCallback,
@@ -321,6 +325,78 @@ class SettingsProvider(private val settingsRegistry: SettingsRegistry) : ISettin
         providerScope.cancel()
         callbacks.clear()
         settingListeners.clear()
+    }
+
+    fun setWebServer(webServer: SettingsWebServer) {
+        this.webServer = webServer
+    }
+
+    override fun registerHttpEndpoint(
+        providerId: String,
+        path: String,
+        method: String,
+        callback: IHttpEndpointCallback
+    ): Boolean {
+        return try {
+            val server = webServer
+            if (server == null) {
+                Log.e(TAG, "Cannot register HTTP endpoint - web server not initialized")
+                false
+            } else {
+                val success = server.registerEndpoint(
+                    providerId,
+                    path,
+                    method,
+                    AidlEndpointCallback(callback)
+                )
+                Log.i(
+                    TAG,
+                    "Registered HTTP endpoint: $method $path for provider $providerId - success: $success"
+                )
+                success
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error registering HTTP endpoint: $providerId $method $path", e)
+            false
+        }
+    }
+
+    override fun unregisterHttpEndpoint(
+        providerId: String,
+        path: String,
+        method: String
+    ): Boolean {
+        return try {
+            val server = webServer
+            if (server == null) {
+                Log.e(TAG, "Cannot unregister HTTP endpoint - web server not initialized")
+                false
+            } else {
+                val success = server.unregisterEndpoint(providerId, path, method)
+                Log.i(
+                    TAG,
+                    "Unregistered HTTP endpoint: $method $path for provider $providerId - success: $success"
+                )
+                success
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering HTTP endpoint: $providerId $method $path", e)
+            false
+        }
+    }
+
+    override fun unregisterAllHttpEndpoints(providerId: String) {
+        try {
+            val server = webServer
+            if (server == null) {
+                Log.e(TAG, "Cannot unregister HTTP endpoints - web server not initialized")
+            } else {
+                server.unregisterAllEndpointsForProvider(providerId)
+                Log.i(TAG, "Unregistered all HTTP endpoints for provider: $providerId")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering all HTTP endpoints for provider: $providerId", e)
+        }
     }
 
     // Discovery methods for dynamic registration

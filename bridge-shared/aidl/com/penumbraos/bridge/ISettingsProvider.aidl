@@ -1,6 +1,7 @@
 package com.penumbraos.bridge;
 
 import com.penumbraos.bridge.callback.ISettingsCallback;
+import com.penumbraos.bridge.callback.IHttpEndpointCallback;
 import com.penumbraos.bridge.types.SystemSettingInfo;
 import com.penumbraos.bridge.types.ActionDefinition;
 import com.penumbraos.bridge.types.AppActionInfo;
@@ -26,4 +27,9 @@ interface ISettingsProvider {
     List<String> getRegisteredApps();
     List<ActionDefinition> getAppActions(String appId);
     List<AppActionInfo> getAllAvailableActions();
+    
+    // HTTP endpoint registration methods
+    boolean registerHttpEndpoint(String providerId, String path, String method, IHttpEndpointCallback callback);
+    boolean unregisterHttpEndpoint(String providerId, String path, String method);
+    void unregisterAllHttpEndpoints(String providerId);
 }

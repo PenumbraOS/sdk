@@ -75,6 +75,7 @@ class SettingsService {
 
                 // Connect registry to web server for broadcasting
                 settingsRegistry.setWebServer(webServer)
+                settingsProvider.setWebServer(webServer)
 
                 webServer.start()
 

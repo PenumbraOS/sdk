@@ -2,7 +2,14 @@ package com.penumbraos.sdk.api
 
 import android.util.Log
 import com.penumbraos.bridge.ISettingsProvider
+import com.penumbraos.bridge.callback.IHttpEndpointCallback
+import com.penumbraos.bridge.callback.IHttpResponseCallback
 import com.penumbraos.bridge.callback.ISettingsCallback
+import com.penumbraos.sdk.api.types.HttpEndpointHandler
+import com.penumbraos.sdk.api.types.HttpRequest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -28,6 +35,9 @@ interface FloatSettingListener {
 @Suppress("UNCHECKED_CAST")
 class SettingsClient(private val settingsProvider: ISettingsProvider) {
     private val listenerCallbacks = mutableMapOf<String, ISettingsCallback>()
+    private val endpointCallbacks = mutableMapOf<String, IHttpEndpointCallback>()
+
+    private val scope = CoroutineScope(Dispatchers.IO)
 
     suspend fun registerSettings(
         appId: String,
@@ -158,7 +168,114 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
         }
     }
 
-    fun addBooleanListener(appId: String, category: String, key: String, listener: BooleanSettingListener) {
+    suspend fun registerHttpEndpoint(
+        providerId: String,
+        path: String,
+        method: String,
+        handler: HttpEndpointHandler
+    ): Boolean {
+        return suspendCancellableCoroutine { continuation ->
+            try {
+                val endpointKey = "${method.uppercase()}:$path"
+
+                val aidlCallback = object : IHttpEndpointCallback.Stub() {
+                    override fun onHttpRequest(
+                        path: String,
+                        method: String,
+                        headers: MutableMap<Any?, Any?>?,
+                        queryParams: MutableMap<Any?, Any?>?,
+                        body: String?,
+                        responseCallback: IHttpResponseCallback
+                    ) {
+                        try {
+                            val headerMap = headers?.mapKeys { it.key.toString() }
+                                ?.mapValues { it.value.toString() } ?: emptyMap()
+                            val queryMap = queryParams?.mapKeys { it.key.toString() }
+                                ?.mapValues { it.value.toString() } ?: emptyMap()
+
+                            val request = HttpRequest(path, method, headerMap, queryMap, body)
+
+                            scope.launch {
+                                try {
+                                    val response = handler.handleRequest(request)
+                                    responseCallback.sendResponse(
+                                        response.statusCode,
+                                        response.headers,
+                                        response.body,
+                                        response.contentType
+                                    )
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error handling HTTP request for $path", e)
+                                    responseCallback.sendResponse(
+                                        500,
+                                        emptyMap<Any?, Any?>(),
+                                        "{\"error\": \"Internal server error: ${e.message}\"}",
+                                        "application/json"
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error in HTTP endpoint callback for $path", e)
+                            try {
+                                responseCallback.sendResponse(
+                                    500,
+                                    emptyMap<Any?, Any?>().toMutableMap(),
+                                    "{\"error\": \"Callback error: ${e.message}\"}",
+                                    "application/json"
+                                )
+                            } catch (callbackError: Exception) {
+                                Log.e(TAG, "Failed to send error response", callbackError)
+                            }
+                        }
+                    }
+                }
+
+                val success =
+                    settingsProvider.registerHttpEndpoint(providerId, path, method, aidlCallback)
+                if (success) {
+                    endpointCallbacks[endpointKey] = aidlCallback
+                    Log.i(TAG, "Registered HTTP endpoint: $method $path for provider $providerId")
+                }
+                continuation.resume(success)
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to register HTTP endpoint: $providerId $method $path", e)
+                continuation.resume(false)
+            }
+        }
+    }
+
+    suspend fun unregisterHttpEndpoint(providerId: String, path: String, method: String): Boolean {
+        return try {
+            val endpointKey = "${method.uppercase()}:$path"
+            val success = settingsProvider.unregisterHttpEndpoint(providerId, path, method)
+            if (success) {
+                endpointCallbacks.remove(endpointKey)
+                Log.i(TAG, "Unregistered HTTP endpoint: $method $path for provider $providerId")
+            }
+            success
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unregister HTTP endpoint: $providerId $method $path", e)
+            false
+        }
+    }
+
+    suspend fun unregisterAllHttpEndpoints(providerId: String) {
+        try {
+            settingsProvider.unregisterAllHttpEndpoints(providerId)
+            endpointCallbacks.clear()
+            Log.i(TAG, "Unregistered all HTTP endpoints for provider: $providerId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to unregister all HTTP endpoints for provider: $providerId", e)
+        }
+    }
+
+    fun addBooleanListener(
+        appId: String,
+        category: String,
+        key: String,
+        listener: BooleanSettingListener
+    ) {
         val settingKey = "$appId.$category.$key"
         val callback = createTypedCallback(settingKey, "boolean") { value ->
             try {
@@ -167,12 +284,17 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                 Log.e(TAG, "Failed to notify boolean listener for $settingKey", e)
             }
         }
-        
+
         listenerCallbacks[settingKey] = callback
         settingsProvider.registerSettingListener(appId, category, key, "boolean", callback)
     }
 
-    fun addStringListener(appId: String, category: String, key: String, listener: StringSettingListener) {
+    fun addStringListener(
+        appId: String,
+        category: String,
+        key: String,
+        listener: StringSettingListener
+    ) {
         val settingKey = "$appId.$category.$key"
         val callback = createTypedCallback(settingKey, "string") { value ->
             try {
@@ -181,7 +303,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                 Log.e(TAG, "Failed to notify string listener for $settingKey", e)
             }
         }
-        
+
         listenerCallbacks[settingKey] = callback
         settingsProvider.registerSettingListener(appId, category, key, "string", callback)
     }
@@ -195,12 +317,17 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                 Log.e(TAG, "Failed to notify int listener for $settingKey", e)
             }
         }
-        
+
         listenerCallbacks[settingKey] = callback
         settingsProvider.registerSettingListener(appId, category, key, "int", callback)
     }
 
-    fun addFloatListener(appId: String, category: String, key: String, listener: FloatSettingListener) {
+    fun addFloatListener(
+        appId: String,
+        category: String,
+        key: String,
+        listener: FloatSettingListener
+    ) {
         val settingKey = "$appId.$category.$key"
         val callback = createTypedCallback(settingKey, "float") { value ->
             try {
@@ -209,7 +336,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                 Log.e(TAG, "Failed to notify float listener for $settingKey", e)
             }
         }
-        
+
         listenerCallbacks[settingKey] = callback
         settingsProvider.registerSettingListener(appId, category, key, "float", callback)
     }
@@ -222,20 +349,35 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
         }
     }
 
-    private fun createTypedCallback(settingKey: String, type: String, onChanged: (String) -> Unit): ISettingsCallback {
+    private fun createTypedCallback(
+        settingKey: String,
+        type: String,
+        onChanged: (String) -> Unit
+    ): ISettingsCallback {
         return object : ISettingsCallback.Stub() {
-            override fun onSettingChanged(appId: String, category: String, key: String, value: String) {
+            override fun onSettingChanged(
+                appId: String,
+                category: String,
+                key: String,
+                value: String
+            ) {
                 onChanged(value)
             }
-            
+
             override fun onSettingsRegistered(appId: String, category: String) {
             }
-            
+
             override fun onError(message: String) {
                 Log.e(TAG, "Listener callback error for $settingKey ($type): $message")
             }
-            
-            override fun onActionResult(appId: String, action: String, success: Boolean, message: String, data: Map<*, *>) {
+
+            override fun onActionResult(
+                appId: String,
+                action: String,
+                success: Boolean,
+                message: String,
+                data: Map<*, *>
+            ) {
             }
         }
     }
