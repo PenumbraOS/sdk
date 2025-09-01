@@ -54,10 +54,15 @@ class AidlEndpointCallback(
                     body: String?,
                     contentType: String?
                 ) {
+                    val headers = (headers?.mapKeys { it.key.toString() }
+                        ?.mapValues { it.value.toString() } ?: emptyMap()).toMutableMap()
+
+                    // Disable CORS
+                    headers["Access-Control-Allow-Origin"] = "*"
+
                     val response = EndpointResponse(
                         statusCode = statusCode,
-                        headers = headers?.mapKeys { it.key.toString() }
-                            ?.mapValues { it.value.toString() } ?: emptyMap(),
+                        headers = headers,
                         body = body ?: "",
                         contentType = contentType ?: "application/json"
                     )
