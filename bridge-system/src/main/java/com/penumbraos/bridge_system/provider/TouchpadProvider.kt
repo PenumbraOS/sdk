@@ -1,5 +1,6 @@
 package com.penumbraos.bridge_system.provider
 
+import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.view.InputChannel
@@ -37,6 +38,12 @@ class TouchpadProvider(private val looper: Looper) :
     }
 
     override fun registerCallback(callback: ITouchpadCallback) {
+        callback.asBinder().linkToDeath(object : IBinder.DeathRecipient {
+            override fun binderDied() {
+                deregisterCallback(callback)
+            }
+        }, 0)
+
         callbacks.add(callback)
         registerListenerIfNecessary()
     }

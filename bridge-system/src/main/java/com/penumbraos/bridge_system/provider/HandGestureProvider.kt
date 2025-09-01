@@ -1,5 +1,6 @@
 package com.penumbraos.bridge_system.provider
 
+import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.view.InputChannel
@@ -81,6 +82,12 @@ class HandGestureProvider(private val looper: Looper) : IHandGestureProvider.Stu
     }
 
     override fun registerCallback(callback: IHandGestureCallback) {
+        callback.asBinder().linkToDeath(object : IBinder.DeathRecipient {
+            override fun binderDied() {
+                deregisterCallback(callback)
+            }
+        }, 0)
+
         callbacks.add(callback)
         registerListenerIfNecessary()
     }
