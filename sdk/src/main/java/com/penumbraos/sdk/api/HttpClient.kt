@@ -26,6 +26,11 @@ enum class HttpMethod(val value: String) {
 class HttpClient(private val httpProvider: IHttpProvider) {
     private val pendingRequests = ConcurrentHashMap<String, IHttpCallback>()
 
+    companion object {
+        private const val MAX_BODY_SIZE_FOR_DIRECT_SEND = 512 * 1024 // 512KB threshold
+        private const val STREAMING_CHUNK_SIZE = 64 * 1024 // 64KB chunks
+    }
+
     suspend fun request(
         url: String,
         method: HttpMethod,
@@ -69,7 +74,7 @@ class HttpClient(private val httpProvider: IHttpProvider) {
         }
 
         pendingRequests[requestId] = callback
-        httpProvider.makeHttpRequest(requestId, url, method.value, body, headers, callback)
+        requestWithBody(requestId, url, method, headers, body, callback)
     }
 
     fun requestStream(
@@ -127,26 +132,40 @@ class HttpClient(private val httpProvider: IHttpProvider) {
             pendingRequests[requestId] = callback
             Log.w("HttpClient", "Added request to pending map, size now: ${pendingRequests.size}")
             Log.w("HttpClient", "Making HTTP request: $url")
-            httpProvider.makeHttpRequest(requestId, url, method.value, body, headers, callback)
-            Log.w("HttpClient", "Called httpProvider.makeHttpRequest")
+            requestWithBody(requestId, url, method, headers, body, callback)
 
             awaitClose {
                 Log.w("HttpClient", "Finished iterating over channel responses")
                 Log.w("HttpClient", "Finished making HTTP request: $url")
             }
-//
-//            // Emit stream responses
-//            Log.w("HttpClient", "Starting to iterate over channel responses")
-//            for (response in channel) {
-//                Log.w("HttpClient", "Emitting response: ${response::class.simpleName}")
-//                emit(response)
-//            }
-//            Log.w("HttpClient", "Finished iterating over channel responses")
-//            Log.w("HttpClient", "Finished making HTTP request: $url")
         }
-
     }
 
+    private fun requestWithBody(
+        requestId: String,
+        url: String,
+        method: HttpMethod,
+        headers: Map<String, String> = emptyMap(),
+        body: String? = null,
+        callback: IHttpCallback
+    ) {
+        val bodyByteArray = body?.toByteArray(Charsets.UTF_8)
+        if (bodyByteArray != null && bodyByteArray.size > MAX_BODY_SIZE_FOR_DIRECT_SEND) {
+            httpProvider.startStreamingHttpRequest(requestId, url, method.value, headers, callback)
+
+            var offset = 0
+            while (offset < bodyByteArray.size) {
+                val chunkSize = minOf(STREAMING_CHUNK_SIZE, bodyByteArray.size - offset)
+                val chunk = ByteArray(chunkSize)
+                System.arraycopy(bodyByteArray, offset, chunk, 0, chunkSize)
+                httpProvider.sendBodyChunk(requestId, chunk)
+                offset += chunkSize
+            }
+            httpProvider.endBodyStream(requestId)
+        } else {
+            httpProvider.makeHttpRequest(requestId, url, method.value, body, headers, callback)
+        }
+    }
 }
 
 data class Response(
