@@ -21,7 +21,6 @@ import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.receive
-import io.ktor.server.request.receiveText
 import io.ktor.server.request.uri
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
@@ -282,10 +281,10 @@ class SettingsWebServer(
         intercept(ApplicationCallPipeline.Call) {
             val fullPath = call.request.uri.substringBefore('?')
             val method = call.request.httpMethod.value
-            
+
             var matchedEndpoint: RegisteredEndpoint? = null
             var pathParams: Map<String, String>? = null
-            
+
             for (endpoint in registeredEndpoints.values) {
                 if (endpoint.method.equals(method, ignoreCase = true)) {
                     val match = endpoint.matchesPath(fullPath)
@@ -304,7 +303,7 @@ class SettingsWebServer(
                     val queryParams = call.request.queryParameters.toMap()
                         .mapValues { it.value.firstOrNull() ?: "" }
                     val body = try {
-                        call.receiveText()
+                        call.receive<ByteArray>()
                     } catch (e: Exception) {
                         null
                     }
@@ -325,10 +324,10 @@ class SettingsWebServer(
                     }
 
                     val contentType = ContentType.parse(response.contentType)
-                    call.respondText(
-                        response.body,
+                    call.respondBytes(
+                        response.body ?: ByteArray(0),
                         contentType,
-                        HttpStatusCode.fromValue(response.statusCode)
+                        HttpStatusCode.fromValue(response.statusCode),
                     )
                     return@intercept finish()
                 } catch (e: Exception) {

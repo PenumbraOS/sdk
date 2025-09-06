@@ -1,5 +1,5 @@
 package com.penumbraos.bridge.callback;
 
 interface IHttpResponseCallback {
-    void sendResponse(int statusCode, in Map headers, String body, String contentType);
+    void sendResponse(int statusCode, in Map headers, in byte[] body, String contentType);
 }

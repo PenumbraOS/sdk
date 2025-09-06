@@ -185,7 +185,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                         pathParams: MutableMap<Any?, Any?>,
                         headers: MutableMap<Any?, Any?>?,
                         queryParams: MutableMap<Any?, Any?>?,
-                        body: String?,
+                        body: ByteArray?,
                         responseCallback: IHttpResponseCallback
                     ) {
                         try {
@@ -218,7 +218,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                                     responseCallback.sendResponse(
                                         500,
                                         emptyMap<Any?, Any?>(),
-                                        "{\"error\": \"Internal server error: ${e.message}\"}",
+                                        "{\"error\": \"Internal server error: ${e.message}\"}".toByteArray(),
                                         "application/json"
                                     )
                                 }
@@ -229,7 +229,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                                 responseCallback.sendResponse(
                                     500,
                                     emptyMap<Any?, Any?>().toMutableMap(),
-                                    "{\"error\": \"Callback error: ${e.message}\"}",
+                                    "{\"error\": \"Callback error: ${e.message}\"}".toByteArray(),
                                     "application/json"
                                 )
                             } catch (callbackError: Exception) {
