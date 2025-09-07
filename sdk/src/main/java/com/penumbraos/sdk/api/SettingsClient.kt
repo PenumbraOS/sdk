@@ -211,6 +211,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                                         response.statusCode,
                                         response.headers,
                                         response.body,
+                                        response.file,
                                         response.contentType
                                     )
                                 } catch (e: Exception) {
@@ -219,6 +220,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                                         500,
                                         emptyMap<Any?, Any?>(),
                                         "{\"error\": \"Internal server error: ${e.message}\"}".toByteArray(),
+                                        null,
                                         "application/json"
                                     )
                                 }
@@ -230,6 +232,7 @@ class SettingsClient(private val settingsProvider: ISettingsProvider) {
                                     500,
                                     emptyMap<Any?, Any?>().toMutableMap(),
                                     "{\"error\": \"Callback error: ${e.message}\"}".toByteArray(),
+                                    null,
                                     "application/json"
                                 )
                             } catch (callbackError: Exception) {

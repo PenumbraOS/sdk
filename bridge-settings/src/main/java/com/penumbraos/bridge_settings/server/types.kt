@@ -1,9 +1,15 @@
 package com.penumbraos.bridge_settings.server
 
+import android.os.ParcelFileDescriptor
+import android.system.Os
+import android.system.OsConstants
 import com.penumbraos.bridge.callback.IHttpEndpointCallback
 import com.penumbraos.bridge.callback.IHttpResponseCallback
 import com.penumbraos.bridge_settings.SettingsWebServer
+import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
 import kotlin.coroutines.resume
 
 data class EndpointRequest(
@@ -100,6 +106,7 @@ class AidlEndpointCallback(
                     statusCode: Int,
                     headers: MutableMap<Any?, Any?>?,
                     body: ByteArray?,
+                    file: ParcelFileDescriptor?,
                     contentType: String?
                 ) {
                     val headers = (headers?.mapKeys { it.key.toString() }
@@ -108,13 +115,41 @@ class AidlEndpointCallback(
                     // Disable CORS
                     headers["Access-Control-Allow-Origin"] = "*"
 
-                    val response = EndpointResponse(
-                        statusCode = statusCode,
-                        headers = headers,
-                        body = body,
-                        contentType = contentType ?: "application/json"
-                    )
-                    continuation.resume(response)
+                    if (file != null) {
+                        try {
+                            Os.lseek(
+                                file.fileDescriptor,
+                                0,
+                                OsConstants.SEEK_SET
+                            )
+                            val fileBytes =
+                                FileInputStream(file.fileDescriptor)
+                            val byteArrayOutputStream = ByteArrayOutputStream()
+                            val buffer = ByteArray(4096)
+                            var bytesRead: Int
+                            while (fileBytes.read(buffer).also { bytesRead = it } != -1) {
+                                byteArrayOutputStream.write(buffer, 0, bytesRead)
+                            }
+
+                            val response = EndpointResponse(
+                                statusCode = statusCode,
+                                headers = headers,
+                                body = byteArrayOutputStream.toByteArray(),
+                                contentType = contentType ?: "application/json"
+                            )
+                            continuation.resume(response)
+                        } catch (e: Exception) {
+                            sendError(continuation, e.message ?: "Unknown error")
+                        }
+                    } else {
+                        val response = EndpointResponse(
+                            statusCode = statusCode,
+                            headers = headers,
+                            body = body,
+                            contentType = contentType ?: "application/json"
+                        )
+                        continuation.resume(response)
+                    }
                 }
             }
 
@@ -129,13 +164,17 @@ class AidlEndpointCallback(
                     responseCallback
                 )
             } catch (e: Exception) {
-                val errorResponse = EndpointResponse(
-                    statusCode = 500,
-                    body = "{\"error\": \"Internal server error: ${e.message}\"}".toByteArray(),
-                    contentType = "application/json"
-                )
-                continuation.resume(errorResponse)
+                sendError(continuation, e.message ?: "Unknown error")
             }
         }
     }
+}
+
+fun sendError(continuation: CancellableContinuation<EndpointResponse>, message: String) {
+    val errorResponse = EndpointResponse(
+        statusCode = 500,
+        body = "{\"error\": \"Internal server error: ${message}\"}".toByteArray(),
+        contentType = "application/json"
+    )
+    continuation.resume(errorResponse)
 }

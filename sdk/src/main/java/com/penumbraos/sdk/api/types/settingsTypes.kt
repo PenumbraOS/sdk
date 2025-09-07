@@ -1,5 +1,7 @@
 package com.penumbraos.sdk.api.types
 
+import android.os.ParcelFileDescriptor
+
 data class HttpRequest(
     val path: String,
     val method: String,
@@ -39,6 +41,7 @@ data class HttpResponse(
     val statusCode: Int = 200,
     val headers: Map<String, String> = emptyMap(),
     val body: ByteArray? = null,
+    val file: ParcelFileDescriptor? = null,
     val contentType: String = "application/json"
 ) {
     override fun equals(other: Any?): Boolean {
