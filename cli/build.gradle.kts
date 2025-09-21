@@ -16,6 +16,16 @@ android {
         versionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
         versionName = project.findProperty("versionName") as String? ?: "1.0"
     }
+    sourceSets {
+        named("main") {
+            java {
+                srcDir("${project.rootDir}/bridge-shared/java")
+            }
+            aidl {
+                srcDir("${project.rootDir}/bridge-shared/aidl")
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -35,7 +45,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":bridge-shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

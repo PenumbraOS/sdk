@@ -35,6 +35,16 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    sourceSets {
+        named("main") {
+            java {
+                srcDir("${project.rootDir}/bridge-shared/java")
+            }
+            aidl {
+                srcDir("${project.rootDir}/bridge-shared/aidl")
+            }
+        }
+    }
     packaging {
         jniLibs {
             // Required for binary to be accessible
@@ -47,7 +57,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":bridge-shared"))
     implementation(libs.okhttp)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

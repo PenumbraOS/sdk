@@ -25,6 +25,16 @@ android {
             )
         }
     }
+    sourceSets {
+        named("main") {
+            java {
+                srcDir("${project.rootDir}/bridge-shared/java")
+            }
+            aidl {
+                srcDir("${project.rootDir}/bridge-shared/aidl")
+            }
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -47,7 +57,6 @@ configurations.all {
 }
 
 dependencies {
-    implementation(project(":bridge-shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
