@@ -5,7 +5,7 @@ import android.os.IBinder
 import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.IHandTrackingProvider
-import com.penumbraos.bridge_system.getApkClassLoader
+import com.penumbraos.bridge.external.getApkClassLoader
 import java.lang.reflect.Method
 
 class HandTrackingProvider(context: Context) : IHandTrackingProvider.Stub() {

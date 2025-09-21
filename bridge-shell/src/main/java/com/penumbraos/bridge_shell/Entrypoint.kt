@@ -6,6 +6,8 @@ import android.util.Log
 import com.penumbraos.appprocessmocks.Common
 import com.penumbraos.appprocessmocks.MockContext
 import com.penumbraos.bridge.external.connectToBridge
+import com.penumbraos.bridge_shell.provider.AccessoryProvider
+import com.penumbraos.bridge_shell.provider.ShellProvider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,7 +40,8 @@ class Entrypoint {
                     Log.i(TAG, "Connected to bridge-core")
 
                     val shellProvider = ShellProvider()
-                    bridge.registerShellService(shellProvider)
+                    val accessoryProvider = AccessoryProvider(context)
+                    bridge.registerShellService(shellProvider, accessoryProvider)
 
                     Log.w(TAG, "Registered shell bridge")
                 } catch (e: Exception) {

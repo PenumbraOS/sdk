@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.os.IBinder
 import android.util.Log
 import com.penumbraos.bridge.IBridge
+import com.penumbraos.bridge.IAccessoryProvider
 import com.penumbraos.bridge.IDnsProvider
 import com.penumbraos.bridge.IEsimProvider
 import com.penumbraos.bridge.IHandGestureProvider
@@ -20,6 +21,7 @@ import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.IWebSocketProvider
 import com.penumbraos.bridge.external.BRIDGE_SERVICE_READY
+import com.penumbraos.sdk.api.AccessoryClient
 import com.penumbraos.sdk.api.DnsClient
 import com.penumbraos.sdk.api.EsimClient
 import com.penumbraos.sdk.api.HandGestureClient
@@ -55,6 +57,7 @@ class PenumbraClient {
     lateinit var handTracking: HandTrackingClient
 
     lateinit var esim: EsimClient
+    lateinit var accessory: AccessoryClient
 
     lateinit var settings: SettingsClient
     lateinit var shell: ShellClient
@@ -135,6 +138,8 @@ class PenumbraClient {
 
             val esimProvider =
                 IEsimProvider.Stub.asInterface(service!!.getEsimProvider())
+            val accessoryProvider =
+                IAccessoryProvider.Stub.asInterface(service!!.getAccessoryProvider())
 
             val settingsProvider =
                 ISettingsProvider.Stub.asInterface(service!!.getSettingsProvider())
@@ -154,6 +159,7 @@ class PenumbraClient {
             handTracking = HandTrackingClient(handTrackingProvider)
 
             esim = EsimClient(esimProvider)
+            accessory = AccessoryClient(accessoryProvider)
 
             settings = SettingsClient(settingsProvider)
             shell = ShellClient(shellProvider)

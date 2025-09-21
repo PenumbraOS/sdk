@@ -20,6 +20,7 @@ class BridgeService {
     private var handTrackingProvider: IHandTrackingProvider? = null
 
     private var esimProvider: IEsimProvider? = null
+    private var accessoryProvider: IAccessoryProvider? = null
 
     private var settingsProvider: ISettingsProvider? = null
     private var shellProvider: IShellProvider? = null
@@ -59,6 +60,10 @@ class BridgeService {
 
         override fun getEsimProvider(): IBinder? {
             return this@BridgeService.esimProvider?.asBinder()
+        }
+
+        override fun getAccessoryProvider(): IBinder? {
+            return this@BridgeService.accessoryProvider?.asBinder()
         }
 
         override fun getSettingsProvider(): IBinder? {
@@ -104,9 +109,10 @@ class BridgeService {
             sendBroadcastIfReady()
         }
 
-        override fun registerShellService(shellProvider: IShellProvider?) {
+        override fun registerShellService(shellProvider: IShellProvider?, accessoryProvider: IAccessoryProvider?) {
             Log.d(TAG, "Registering shell service")
             this@BridgeService.shellProvider = shellProvider
+            this@BridgeService.accessoryProvider = accessoryProvider
 
             sendBroadcastIfReady()
         }

@@ -1,8 +1,9 @@
-package com.penumbraos.bridge_shell
+package com.penumbraos.bridge_shell.provider
 
 import android.util.Log
 import com.penumbraos.bridge.IShellProvider
 import com.penumbraos.bridge.callback.IShellCallback
+import com.penumbraos.bridge.external.safeCallback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -53,9 +54,9 @@ class ShellProvider : IShellProvider.Stub() {
                 if (workDir.exists() && workDir.isDirectory) {
                     processBuilder.directory(workDir)
                 } else {
-                    safeCallback {
+                    safeCallback(TAG, {
                         callback.onError("Working directory does not exist: $wd")
-                    }
+                    })
                     return
                 }
             }
@@ -70,9 +71,9 @@ class ShellProvider : IShellProvider.Stub() {
                     try {
                         outputReader.useLines { lines ->
                             lines.forEach { line ->
-                                safeCallback {
+                                safeCallback(TAG, {
                                     callback.onOutput(line)
-                                }
+                                })
                             }
                         }
                     } catch (e: Exception) {
@@ -84,9 +85,9 @@ class ShellProvider : IShellProvider.Stub() {
                     try {
                         errorReader.useLines { lines ->
                             lines.forEach { line ->
-                                safeCallback {
+                                safeCallback(TAG, {
                                     callback.onError(line)
-                                }
+                                })
                             }
                         }
                     } catch (e: Exception) {
@@ -106,33 +107,23 @@ class ShellProvider : IShellProvider.Stub() {
             }
 
             if (result != null) {
-                safeCallback {
+                safeCallback(TAG, {
                     callback.onComplete(result)
-                }
+                })
             } else {
                 process.destroyForcibly()
-                safeCallback {
+                safeCallback(TAG, {
                     callback.onError("Command timed out after ${timeoutMs}ms")
                     callback.onComplete(-1)
-                }
+                })
             }
 
         } catch (e: Exception) {
             Log.e(TAG, "Error executing command", e)
-            safeCallback {
+            safeCallback(TAG, {
                 callback.onError("Command execution failed: ${e.message}")
                 callback.onComplete(-1)
-            }
-        }
-    }
-
-    private inline fun safeCallback(operation: () -> Unit): Boolean {
-        return try {
-            operation()
-            true
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception in callback", e)
-            false
+            })
         }
     }
 }
