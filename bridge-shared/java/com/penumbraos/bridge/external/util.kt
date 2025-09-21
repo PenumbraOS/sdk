@@ -2,6 +2,8 @@ package com.penumbraos.bridge.external
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.os.DeadObjectException
+import android.os.RemoteException
 import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.IBridge
@@ -146,3 +148,23 @@ suspend fun waitForBridgeShell(tag: String, bridge: IBridge) {
 //
 //        return intent
 //    }
+inline fun safeCallback(
+    tag: String,
+    operation: () -> Unit,
+    onDeadObject: () -> Unit = {}
+): Boolean {
+    return try {
+        operation()
+        true
+    } catch (e: DeadObjectException) {
+        Log.w(tag, "Dead callback detected", e)
+        onDeadObject()
+        false
+    } catch (e: RemoteException) {
+        Log.w(tag, "RemoteException in callback", e)
+        false
+    } catch (e: Exception) {
+        Log.e(tag, "Exception in callback", e)
+        false
+    }
+}

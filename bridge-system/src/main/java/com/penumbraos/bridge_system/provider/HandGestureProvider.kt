@@ -10,6 +10,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import com.penumbraos.bridge.IHandGestureProvider
 import com.penumbraos.bridge.callback.IHandGestureCallback
+import com.penumbraos.bridge.external.safeCallback
 import com.penumbraos.bridge_system.util.registerTouchpadInputChannel
 
 private const val TAG = "HandGestureProvider"

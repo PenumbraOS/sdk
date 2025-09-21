@@ -11,6 +11,7 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import com.penumbraos.bridge.ISttProvider
 import com.penumbraos.bridge.callback.ISttRecognitionListener
+import com.penumbraos.bridge.external.safeCallback
 
 private const val TAG = "SttProvider"
 

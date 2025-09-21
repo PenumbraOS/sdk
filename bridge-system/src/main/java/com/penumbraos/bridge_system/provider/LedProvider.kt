@@ -5,7 +5,7 @@ import android.os.IBinder
 import android.os.ServiceManager
 import android.util.Log
 import com.penumbraos.bridge.ILedProvider
-import com.penumbraos.bridge_system.getApkClassLoader
+import com.penumbraos.bridge.external.getApkClassLoader
 import java.lang.reflect.Method
 
 private const val TAG = "LedProvider"

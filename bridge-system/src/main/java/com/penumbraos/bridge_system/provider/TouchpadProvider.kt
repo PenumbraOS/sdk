@@ -8,6 +8,7 @@ import android.view.InputEvent
 import android.view.InputEventReceiver
 import com.penumbraos.bridge.ITouchpadProvider
 import com.penumbraos.bridge.callback.ITouchpadCallback
+import com.penumbraos.bridge.external.safeCallback
 import com.penumbraos.bridge_system.util.registerTouchpadInputChannel
 
 private const val TOUCHPAD_EVENT_SOURCE = 0x100008
