@@ -47,6 +47,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":bridge-shared"))
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.server.core)

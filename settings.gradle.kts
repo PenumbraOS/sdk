@@ -33,6 +33,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "SDKBridge"
+include(":bridge-shared")
 include(":bridge-core")
 include(":example")
 include(":sdk")

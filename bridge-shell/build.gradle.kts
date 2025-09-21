@@ -18,16 +18,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    sourceSets {
-        named("main") {
-            java {
-                srcDir("${project.rootDir}/bridge-shared/java")
-            }
-            aidl {
-                srcDir("${project.rootDir}/bridge-shared/aidl")
-            }
-        }
-    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -64,6 +54,7 @@ tasks.withType<Test> {
 }
 
 dependencies {
+    implementation(project(":bridge-shared"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
