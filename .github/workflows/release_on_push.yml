@@ -79,7 +79,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Release APKs
-        run: ./gradlew :bridge-core:assembleRelease :bridge-system:assembleRelease :bridge-shell:assembleRelease :bridge-settings:assembleRelease -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE"
+        run: ./gradlew :bridge-core:assembleRelease :bridge-system:assembleRelease :bridge-shell:assembleRelease :bridge-settings:assembleRelease :cli:assembleRelease -PversionName="$VERSION_NAME" -PversionCode="$VERSION_CODE"
 
       - name: Rename APK files
         run: |
@@ -91,6 +91,7 @@ jobs:
           cp bridge-system/build/outputs/apk/release/bridge-system-release.apk release-artifacts/PenumbraOS-SDK-Bridge-System-${VERSION_NAME}.apk
           cp bridge-shell/build/outputs/apk/release/bridge-shell-release.apk release-artifacts/PenumbraOS-SDK-Bridge-Shell-${VERSION_NAME}.apk
           cp bridge-settings/build/outputs/apk/release/bridge-settings-release.apk release-artifacts/PenumbraOS-SDK-Bridge-Settings-${VERSION_NAME}.apk
+          cp sdk/build/outputs/apk/release/cli-release.apk release-artifacts/PenumbraOS-SDK-CLI-${VERSION_NAME}.apk
 
       - name: Generate version tag
         id: version
