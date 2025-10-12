@@ -125,7 +125,8 @@ class SettingsRegistry(
     // Reference to web server for broadcasting (set by SettingsService)
     private var webServer: SettingsWebServer? = null
 
-    private val _settingsFlow = MutableStateFlow<SettingsUpdate>(SettingsUpdate(emptyMap(), emptyList()))
+    private val _settingsFlow =
+        MutableStateFlow<SettingsUpdate>(SettingsUpdate(emptyMap(), emptyList()))
     val settingsFlow: StateFlow<SettingsUpdate> = _settingsFlow.asStateFlow()
 
     private val json = Json {
@@ -136,7 +137,7 @@ class SettingsRegistry(
     init {
         loadSavedSettings()
         initializeSystemSettingsSync()
-        setupTemperatureMonitoring()
+//        setupTemperatureMonitoring()
     }
 
     suspend fun initialize() {
@@ -353,7 +354,7 @@ class SettingsRegistry(
     suspend fun updateSystemSetting(key: String, value: Any): Boolean {
         if (validateSystemSetting(key, value)) {
             val previousValue = systemSettings[key]
-            
+
             // Apply the setting to Android system if it's a system setting
             val success = if (isAndroidSystemSetting(key)) {
                 applyAndroidSystemSetting(key, value)
@@ -612,7 +613,8 @@ class SettingsRegistry(
             temperatureController.temperatureFlow.collect { temperature ->
                 val previousValue = systemSettings["device.temperature"]
                 systemSettings["device.temperature"] = temperature
-                val change = SettingChange("system", "", "device.temperature", temperature, previousValue)
+                val change =
+                    SettingChange("system", "", "device.temperature", temperature, previousValue)
                 updateSettingsFlow(listOf(change))
             }
         }
