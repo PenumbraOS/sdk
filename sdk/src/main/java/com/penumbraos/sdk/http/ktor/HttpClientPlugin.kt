@@ -20,7 +20,6 @@ import io.ktor.util.AttributeKey
 import io.ktor.util.date.GMTDate
 import io.ktor.utils.io.ByteChannel
 import io.ktor.utils.io.InternalAPI
-import io.ktor.utils.io.close
 import io.ktor.utils.io.writeStringUtf8
 
 /**
@@ -91,24 +90,28 @@ class HttpClientPlugin(private val penumbraClient: PenumbraClient) {
                             }
 
                             is HttpStreamResponse.Complete -> {
+                                Log.i("HttpClientPlugin", "Stream complete")
                                 streamingByteChannel.flushAndClose()
                             }
 
                             is HttpStreamResponse.Error -> {
-                                streamingByteChannel.close(RuntimeException("Stream error: ${response.message}"))
+                                Log.e("HttpClientPlugin", "Stream error: ${response.message}")
+                                streamingByteChannel.close()
+                                throw RuntimeException("Stream error: ${response.message}")
                             }
                         }
                     }
                 } catch (e: Exception) {
                     Log.e("HttpClientPlugin", "Exception in streaming flow", e)
-                    streamingByteChannel.close(e)
+                    streamingByteChannel.close()
+                    throw e
                 }
 
                 val headersList = mutableListOf<Pair<String, List<String>>>()
                 for (header in headers) {
                     headersList.add(Pair(header.key, listOf(header.value)))
                 }
-
+                
                 HttpClientCall(
                     scope,
                     request.build(),
