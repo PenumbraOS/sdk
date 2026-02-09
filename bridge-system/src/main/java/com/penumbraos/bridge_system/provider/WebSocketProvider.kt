@@ -41,13 +41,13 @@ class WebSocketProvider(private val client: OkHttpClient) : IWebSocketProvider.S
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 safeCallback(TAG, {
-                    callback.onMessage(requestId, 1, text.toByteArray())
+                    callback.onMessage(requestId, 0, text.toByteArray())
                 }, onDeadObject = { webSockets.remove(requestId) })
             }
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                 safeCallback(TAG, {
-                    callback.onMessage(requestId, 2, bytes.toByteArray())
+                    callback.onMessage(requestId, 1, bytes.toByteArray())
                 }, onDeadObject = { webSockets.remove(requestId) })
             }
 
