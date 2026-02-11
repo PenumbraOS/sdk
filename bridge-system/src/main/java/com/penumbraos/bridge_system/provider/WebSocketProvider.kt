@@ -35,20 +35,20 @@ class WebSocketProvider(private val client: OkHttpClient) : IWebSocketProvider.S
                     response.headers.toMultimap().mapValues { it.value.joinToString() }
                 safeCallback(TAG, {
                     callback.onOpen(requestId, responseHeaders)
-                }, onDeadObject = { webSockets.remove(requestId) })
+                }, onDeadObject = { onDeadObject(webSocket, requestId) })
                 webSockets[requestId] = webSocket
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 safeCallback(TAG, {
                     callback.onMessage(requestId, 0, text.toByteArray())
-                }, onDeadObject = { webSockets.remove(requestId) })
+                }, onDeadObject = { onDeadObject(webSocket, requestId) })
             }
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                 safeCallback(TAG, {
                     callback.onMessage(requestId, 1, bytes.toByteArray())
-                }, onDeadObject = { webSockets.remove(requestId) })
+                }, onDeadObject = { onDeadObject(webSocket, requestId) })
             }
 
             override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
@@ -87,5 +87,10 @@ class WebSocketProvider(private val client: OkHttpClient) : IWebSocketProvider.S
     override fun closeWebSocket(requestId: String) {
         val webSocket = webSockets[requestId]
         webSocket?.close(1000, null)
+    }
+
+    fun onDeadObject(webSocket: WebSocket, requestId: String) {
+        webSockets.remove(requestId)
+        webSocket.close(1011, null)
     }
 }
