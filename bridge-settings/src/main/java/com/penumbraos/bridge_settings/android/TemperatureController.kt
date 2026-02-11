@@ -17,18 +17,19 @@ private const val TEMPERATURE_UPDATE_INTERVAL_MS = 30000L // 30 seconds
 class TemperatureController(private val shellClient: ShellClient) {
     
     val temperatureFlow: Flow<Float> = flow {
-        Log.i(TAG, "Starting temperature monitoring flow with ${TEMPERATURE_UPDATE_INTERVAL_MS}ms interval")
-        while (true) {
-            try {
-                val temperature = getCurrentTemperature()
-                Log.i(TAG, "Emitting temperature: ${temperature}°C")
-                emit(temperature)
-            } catch (e: Exception) {
-                Log.e(TAG, "Error during temperature monitoring", e)
-                emit(0.0f) // Emit default value on error
-            }
-            delay(TEMPERATURE_UPDATE_INTERVAL_MS)
-        }
+        Log.i(TAG, "Temperature monitoring is disabled")
+        // Log.i(TAG, "Starting temperature monitoring flow with ${TEMPERATURE_UPDATE_INTERVAL_MS}ms interval")
+        // while (true) {
+        //     try {
+        //         val temperature = getCurrentTemperature()
+        //         Log.i(TAG, "Emitting temperature: ${temperature}°C")
+        //         emit(temperature)
+        //     } catch (e: Exception) {
+        //         Log.e(TAG, "Error during temperature monitoring", e)
+        //         emit(0.0f) // Emit default value on error
+        //     }
+        //     delay(TEMPERATURE_UPDATE_INTERVAL_MS)
+        // }
     }
     
     private val monitoringScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
