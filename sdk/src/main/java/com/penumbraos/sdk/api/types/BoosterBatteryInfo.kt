@@ -5,7 +5,10 @@ import com.penumbraos.bridge.types.AccessoryBatteryInfo
 data class BoosterBatteryInfo(
     val batteryLevel: Int,
     val isCharging: Boolean,
-    val isConnected: Boolean
+    val isConnected: Boolean,
+    val connectionState: Int = 1,
+    val isOnChargePad: Boolean = false,
+    val isInChargeCase: Boolean = false
 ) {
     companion object {
         fun fromAidl(
@@ -14,7 +17,10 @@ data class BoosterBatteryInfo(
             return BoosterBatteryInfo(
                 batteryLevel = aidlInfo.boosterBatteryLevel,
                 isCharging = aidlInfo.boosterBatteryCharging,
-                isConnected = aidlInfo.boosterBatteryConnected
+                isConnected = aidlInfo.boosterBatteryConnected,
+                connectionState = aidlInfo.boosterConnectionState,
+                isOnChargePad = aidlInfo.isOnChargePad,
+                isInChargeCase = aidlInfo.isInChargeCase
             )
         }
     }

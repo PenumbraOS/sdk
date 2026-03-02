@@ -4,4 +4,7 @@ parcelable AccessoryBatteryInfo {
     int boosterBatteryLevel;
     boolean boosterBatteryCharging;
     boolean boosterBatteryConnected;
+    int boosterConnectionState;
+    boolean isOnChargePad;
+    boolean isInChargeCase;
 }
