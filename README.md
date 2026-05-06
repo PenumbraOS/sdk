@@ -1,3 +1,6 @@
+> [!CAUTION]
+> This exploit path is deprecated and is no longer in use. See [humane-system-hook](https://github.com/PenumbraOS/humane-system-hook) for current PenumbraOS work.
+
 # SDK
 
 This is the SDK for [PenumbraOS](https://github.com/PenumbraOS/), the full development platform for the late Humane Ai Pin.
@@ -50,7 +53,7 @@ Both a worker in the `shell` domain and a service for proxying actual `sh` comma
 
 ## CLI
 
-A command-line interface is available at `/data/local/tmp/penumbra` for managing system settings and executing module actions. Notably, this can be used to configure the eSIM.
+A command-line interface is available at `/data/local/tmp/bin/penumbra` for managing system settings and executing module actions. Notably, this can be used to configure the eSIM.
 
 ```bash
 # List available settings and actions
